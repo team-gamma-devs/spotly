@@ -177,3 +177,4 @@ class Invitation:
     def __repr__(self):
         """Return a compact representation for debugging."""
         return f"Invitation(id={self.id}, email={self.email}, cohort={self.cohort})"
+    
