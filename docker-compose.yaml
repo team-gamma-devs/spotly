@@ -1,6 +1,7 @@
 services:
   mongo:
     image: mongo:latest
+
     container_name: mongo
     restart: unless-stopped
     environment:
@@ -77,4 +78,8 @@ volumes:
 
 networks:
   app_network:
+<<<<<<< HEAD
     driver: bridge
+=======
+    driver: bridge
+>>>>>>> 09f2b0b (Feat: Added tests for invitation and csv_invitation,)
