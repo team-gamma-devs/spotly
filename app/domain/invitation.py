@@ -35,7 +35,7 @@ class Invitation:
         token_state: bool = False,
         log_state: bool = False,
         created_at: datetime | None = None,
-        updated_at: datetime | None = None,
+        expires_at: datetime | None = None,
     ):
         """
         Initialize a new Invitation instance.
@@ -57,7 +57,7 @@ class Invitation:
         self.token_state = token_state
         self.log_state = log_state
         self.created_at = created_at
-        self.expires_at = updated_at
+        self.expires_at = expires_at
 
     @property
     def full_name(self):
