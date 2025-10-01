@@ -6,7 +6,11 @@ REQUIRED_COLUMNS = ["first_name", "last_name", "cohort", "email"]
 
 # Esto esta todo roto
 class CSVInvitationProcessor:
-    def __init__(self, invitation_repo: InvitationRepository, email_service: EmailService):
+    def __init__(
+        self,
+        invitation_repo: InvitationRepository,
+        email_service: EmailService,
+    ):
         self.invitation_repo = invitation_repo
         self.email_service = email_service
 
@@ -17,7 +21,7 @@ class CSVInvitationProcessor:
         if missing:
             raise HTTPException(
                 status_code=400,
-                detail=f"Faltan columnas requeridas: {missing}"
+                detail=f"Faltan columnas requeridas: {missing}",
             )
         return df
 
