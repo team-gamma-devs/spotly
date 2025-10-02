@@ -1,10 +1,5 @@
 import resend
-from typing import Protocol
-
-
-class IEmailService(Protocol):
-    def send_email(self, to: str, subject: str, body: str) -> None:
-        ...
+from app.infrastructure.email.interface import IEmailService
 
 
 class ResendEmailService(IEmailService):
@@ -14,11 +9,14 @@ class ResendEmailService(IEmailService):
 
     def send_email(self, to: str, subject: str, body: str) -> None:
         try:
-            resend.Emails.send({
+            payload = {
                 "from": self.sender,
                 "to": [to],
                 "subject": subject,
-                "html": body
-            })
+                "html": body,
+            }
+
+            resend.Emails.send(**payload)
+
         except Exception as e:
-            raise RuntimeError(f"Failed to send email: {e}")
+            raise RuntimeError(f"Fallo al enviar email: {e}")

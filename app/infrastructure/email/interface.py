@@ -1,6 +1,5 @@
-from abc import ABC, abstractmethod
+from typing import Protocol
 
-class EmailService(ABC):
-    @abstractmethod
-    def send_email(self, to: str, subject: str, html_content: str):
-        pass
+
+class IEmailService(Protocol):
+    def send_email(self, to: str, subject: str, body: str) -> None: ...
