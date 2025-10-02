@@ -16,7 +16,7 @@ class Invitation:
         cohort (int): Cohort number (readonly).
         token (str): Secure URL-safe one-time token for the invitation (readonly).
         token_state (bool): Indicates if the token has been used/activated.
-        log_state (bool): Indicates if the user coud registrate correctly in the app.
+        log_state (bool): Indicates if the user could registrate correctly in the app.
         created_at (datetime): UTC timestamp when the invitation was created (readonly).
         expires_at (datetime): UTC timestamp when the invitation expires (readonly).
 
@@ -44,7 +44,7 @@ class Invitation:
             full_name (str): Full name of the invited user.
             email (str): Email address of the invited user.
             cohort (int): Cohort number.
-            token (str): Not used; token is generated automatically.
+            token (str): Token for give access to a new user to registration form.
 
         Raises:
             TypeError, ValueError: If any input is invalid.
@@ -116,7 +116,7 @@ class Invitation:
             raise TypeError("Token state must be a boolean")
         self.__token_state = value
 
-    # Setter for log if the user coud registrate.
+    # Setter for log if the user could registrate.
     @log_state.setter
     def log_state(self, value: bool):
         if not isinstance(value, bool):
@@ -139,8 +139,21 @@ class Invitation:
         if not value:
             self.__expires_at = datetime.now(timezone.utc) + timedelta(days=30)
             return
+        value = self.validate_date(value, "Expiration date")
+        if value < self.created_at:
+            raise ValueError("Expiration date must be after the creation date")
 
-        self.__expires_at = self.validate_date(value, "Expiration date")
+        self.__expires_at = value
+
+    def is_valid(self) -> bool:
+        """Check if invitation is valid (not expired and token not used)."""
+        return (
+            not self.token_state and 
+            datetime.now(timezone.utc) <= self.expires_at
+        )
+
+    def __repr__(self):
+        return f"Invitation(id={self.id}, email={self.email}, cohort={self.cohort})"
 
     @staticmethod
     def validate_string(value: str, field_name: str) -> str:
@@ -169,13 +182,7 @@ class Invitation:
         return value
 
     @staticmethod
-    def validate_bool(value: bool, field_name: str) -> bool:
-        if not isinstance(value, bool):
-            raise TypeError(f"{field_name} must be a boolean")
-        return value
-
-    @staticmethod
     def validate_date(value: datetime, field_name: str) -> datetime:
         if not isinstance(value, datetime):
-            raise TypeError(f"{field_name} must ve a valid date")
+            raise TypeError(f"{field_name} must be a valid date")
         return value
