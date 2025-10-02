@@ -12,5 +12,12 @@ def upload_csv(file: UploadFile):
     if file.content_type != "text/csv":
         raise HTTPException(status_code=400, detail="File must be CSV")
     
-    use_case = CSVInvitationProcessor()
-    return 201
+    processor = CSVInvitationProcessor()
+
+    try:
+        invitations = processor.process_csv(file)
+    except Exception:
+        raise HTTPException(status_code=400)
+    
+    return {"message": "Invitations processed successfully", "count": len(invitations)}
+

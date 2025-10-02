@@ -1,50 +1,57 @@
-from fastapi import HTTPException
+import csv
+
 from app.domain.invitation import Invitation
+from .exceptions import InvalidCSVException, MissingColumnsException
 
-REQUIRED_COLUMNS = ["first_name", "last_name", "cohort", "email"]
 
-
-# Esto esta todo roto
 class CSVInvitationProcessor:
-    def __init__(
-        self,
-        invitation_repo: InvitationRepository,
-        email_service: EmailService,
-    ):
+    REQUIRED_COLUMNS = ["first_name", "last_name", "cohort", "email"]
+
+    def __init__(self, invitation_repo, email_service):
         self.invitation_repo = invitation_repo
         self.email_service = email_service
 
-    def validate_csv(self, file) -> pd.DataFrame:
-        """Valida que el CSV tenga las columnas requeridas y lo carga en un DataFrame"""
-        df = pd.read_csv(file)
-        missing = [col for col in REQUIRED_COLUMNS if col not in df.columns]
-        if missing:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Faltan columnas requeridas: {missing}",
-            )
-        return df
-
     def process_csv(self, file):
-        """Procesa el CSV completo: validación, creación de invitaciones y envío"""
-        df = self.validate_csv(file)
+        """Orquesta todo el flujo de validación, creación, guardado y envío"""
+        df = self._validate_csv(file)
+        invitations = self._generate_invitations(df)
+        self._save_invitations(invitations)
+        self._send_invitations(invitations)
+        return invitations
+
+    # -------------------------
+    # Métodos privados helpers
+    # -------------------------
+
+    def _validate_csv(self, file):
+        """Verifica extensión y columnas requeridas"""
+        if not file.name.endswith(".csv"):
+            raise InvalidCSVException("El archivo debe ser un CSV")
+
+        file.seek(0)
+        reader = csv.DictReader(file.read().decode("utf-8").splitlines())
+
+        missing = [col for col in self.REQUIRED_COLUMNS if col not in reader.fieldnames]
+        if missing:
+            raise MissingColumnsException(missing)
+
+        return list(reader)
+
+    def _generate_invitations(self, rows):
         invitations = []
-
-        for _, row in df.iterrows():
-            # 1. Crear la invitación usando el modelo de dominio
+        for row in rows:
             invitation = Invitation(
-                name=row["nombre"],
+                full_name=f"{row["first_name"]} {row["last_name"]}",
+                cohort=row["cohort"],
                 email=row["email"],
-                phone=row["telefono"],
             )
+            invitations.append(invitation)
+        return invitations
 
-            # 2. Guardar en la base de datos
+    def _save_invitations(self, invitations):
+        for invitation in invitations:
             self.invitation_repo.save(invitation)
 
-            # 3. Enviar la invitación por email
+    def _send_invitations(self, invitations):
+        for invitation in invitations:
             self.email_service.send_invitation(invitation)
-
-            invitations.append(invitation)
-
-        # 4. Devolver un resumen en JSON si se quiere
-        return [inv.to_dict() for inv in invitations]
