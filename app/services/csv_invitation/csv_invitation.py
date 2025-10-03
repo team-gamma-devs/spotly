@@ -1,4 +1,5 @@
 import csv
+from typing import TextIO, List
 
 from app.domain.invitation import Invitation
 from .exceptions import InvalidCSVException, MissingColumnsException
@@ -11,25 +12,21 @@ class CSVInvitationProcessor:
         self.invitation_repo = invitation_repo
         self.email_service = email_service
 
-    def process_csv(self, file):
+    def process_csv(self, file: TextIO):
         """Orquesta todo el flujo de validación, creación, guardado y envío"""
-        df = self._validate_csv(file)
-        invitations = self._generate_invitations(df)
+        graduates = self._validate_csv(file)
+        invitations = self._generate_invitations(graduates)
         self._save_invitations(invitations)
-        self._send_invitations(invitations)
-        return invitations
+        return self._send_invitations(invitations)
 
-    # -------------------------
-    # Métodos privados helpers
-    # -------------------------
 
-    def _validate_csv(self, file):
-        """Verifica extensión y columnas requeridas"""
-        if not file.name.endswith(".csv"):
-            raise InvalidCSVException("El archivo debe ser un CSV")
-
-        file.seek(0)
-        reader = csv.DictReader(file.read().decode("utf-8").splitlines())
+    # Private methods (Modularization).
+    def _validate_csv(self, file: TextIO):
+        try:
+            file.seek(0)
+            reader = csv.DictReader(file.read().decode("utf-8").splitlines())
+        except UnicodeDecodeError:
+            raise InvalidCSVException("Not valid CSV")
 
         missing = [col for col in self.REQUIRED_COLUMNS if col not in reader.fieldnames]
         if missing:
@@ -37,13 +34,13 @@ class CSVInvitationProcessor:
 
         return list(reader)
 
-    def _generate_invitations(self, rows):
+    def _generate_invitations(self, graduates: list):
         invitations = []
-        for row in rows:
+        for graduated in graduates:
             invitation = Invitation(
-                full_name=f"{row["first_name"]} {row["last_name"]}",
-                cohort=row["cohort"],
-                email=row["email"],
+                full_name=f"{graduated["first_name"]} {graduated["last_name"]}",
+                cohort=graduated["cohort"],
+                email=graduated["email"],
             )
             invitations.append(invitation)
         return invitations
@@ -52,6 +49,6 @@ class CSVInvitationProcessor:
         for invitation in invitations:
             self.invitation_repo.save(invitation)
 
-    def _send_invitations(self, invitations):
+    def _send_invitations(self, invitations: List[Invitation]):
         for invitation in invitations:
             self.email_service.send_invitation(invitation)
