@@ -53,7 +53,9 @@ class Invitation:
         self.__full_name = self.validate_string(full_name, "full_name")
         self.__email = self.validate_email(email)
         self.__cohort = self.validate_cohort(cohort)
-        self.token = token  # Generate a secure, URL-safe one-time token for the invitation
+        self.token = (
+            token  # Generate a secure, URL-safe one-time token for the invitation
+        )
         self.token_state = token_state
         self.log_state = log_state
         self.created_at = created_at
@@ -147,10 +149,7 @@ class Invitation:
 
     def is_valid(self) -> bool:
         """Check if invitation is valid (not expired and token not used)."""
-        return (
-            not self.token_state and 
-            datetime.now(timezone.utc) <= self.expires_at
-        )
+        return not self.token_state and datetime.now(timezone.utc) <= self.expires_at
 
     def __repr__(self):
         return f"Invitation(id={self.id}, email={self.email}, cohort={self.cohort})"
