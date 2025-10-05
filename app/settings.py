@@ -3,6 +3,8 @@ import os
 
 
 class BaseSettingsClass(BaseSettings):
+    resend_api_key: str
+
     class Config:
         env_file = ".env"
         case_sensitive = False
@@ -18,6 +20,4 @@ class ProductionSettings(BaseSettingsClass):
 
 # Select class depends of the env.
 env = os.getenv("ENV", "development")
-settings = (
-    DevelopmentSettings() if env == "development" else ProductionSettings()
-)
+settings = DevelopmentSettings() if env == "development" else ProductionSettings()
