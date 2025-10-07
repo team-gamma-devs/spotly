@@ -1,9 +1,11 @@
 [project]
-name = "spotly-backend"
+name = "spotly"
 version = "0.1.0"
 description = "Spotly backend service"
 authors = [
-    {name = "Federico Paganini perfedefer@gmail.com"}
+    {name = "Federico Paganini perfedefer@gmail.com"},
+    {name = "Martín Marrero the.chiperfil@gmial.com"},
+    {name = "Gabriel Barnada barnadagabriel@gmail.com"},
 ]
 license = {text = "MIT"}
 readme = "README.md"
@@ -28,5 +30,7 @@ build-backend = "poetry.core.masonry.api"
 
 [dependency-groups]
 dev = [
-    "respx (>=0.22.0,<0.23.0)"
+    "respx (>=0.22.0,<0.23.0)",
+    "pytest (>=8.4.2,<9.0.0)",
+    "pytest-cov (>=7.0.0,<8.0.0)"
 ]
