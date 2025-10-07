@@ -8,7 +8,8 @@ import time
 
 from app.settings import settings
 from app.api import api_router
-from app.database import connect_to_mongo, close_mongo_connection
+
+from app.infrastructure.repositories.database import Database
 
 # Configure logging
 logging.basicConfig(
@@ -17,28 +18,20 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Global db_instance
+db_instance = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Lifespan context manager for startup and shutdown events.
-    Replaces deprecated @app.on_event decorators.
-    """
-    # Startup
-    logger.info(f"🚀 Starting {settings.app_name} in {settings.app_env} mode...")
+    global db_instance
+    db_instance = await Database.connect_db(
+        mongodb_url=settings.mongodb_url, database_name=settings.mongodb_db_name
+    )
 
-    try:
-        # Connect to MongoDB
-        await connect_to_mongo()
-        logger.info("✅ Application startup complete")
+    yield
 
-        yield  # Application is running
-
-    finally:
-        # Shutdown
-        logger.info(f"🛑 Shutting down {settings.app_name}...")
-        await close_mongo_connection()
-        logger.info("✅ Application shutdown complete")
+    await Database.close_db()
 
 
 def create_app() -> FastAPI:
@@ -127,10 +120,8 @@ def create_app() -> FastAPI:
         Verifies database connections, etc.
         """
         try:
-            from app.database import db
-
             # Verify MongoDB connection
-            await db.client.admin.command("ping")
+            await db_instance.client.admin.command("ping")
 
             return {
                 "status": "ready",
@@ -223,6 +214,6 @@ def create_app() -> FastAPI:
             },
         )
 
-    logger.info(f"✅ {settings.app_name} configured successfully")
+    logger.info(f"{settings.app_name} configured successfully")
 
     return app
