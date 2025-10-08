@@ -15,7 +15,7 @@ class BaseSettingsClass(BaseSettings):
     # Server
     host: str = "0.0.0.0"
     port: int = 8000
-    workers: int = 4
+    workers: int = 2
     log_level: str = "info"
 
     # MongoDB
@@ -40,17 +40,27 @@ class BaseSettingsClass(BaseSettings):
     ]
 
     # CORS
-    cors_origins: list[str] = ["https://spotly.work", "https://www.spotly.work"]
+    cors_origins: list[str] = [
+        "https://spotly.work",
+        "https://www.spotly.work",
+    ]
     cors_allow_credentials: bool = True
-    cors_allow_methods: list[str] = ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+    cors_allow_methods: list[str] = [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "PATCH",
+        "OPTIONS",
+    ]
     cors_allow_headers: list[str] = ["*"]
 
     # Rate Limiting
     rate_limit_per_minute: int = 60
 
     # Pagination
-    default_page_size: int = 20
-    max_page_size: int = 100
+    default_page_size: int = 10
+    max_page_size: int = 20
 
     class Config:
         env_file = ".env"
