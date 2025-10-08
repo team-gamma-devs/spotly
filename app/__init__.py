@@ -171,16 +171,10 @@ def create_app() -> FastAPI:
             ),
         }
 
-    # ============================================
     # INCLUDE ROUTERS
-    # ============================================
-
     app.include_router(api_router)
 
-    # ============================================
     # EXCEPTION HANDLERS
-    # ============================================
-
     @app.exception_handler(404)
     async def not_found_handler(request: Request, exc):
         return JSONResponse(
