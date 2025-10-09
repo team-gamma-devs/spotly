@@ -152,7 +152,7 @@ def create_app() -> FastAPI:
     @app.get("/", tags=["Root"])
     async def root(request: Request):
         """
-        Root endpoint - shows API info and nginx headers (useful for debugging).
+        Root endpoint - shows API info and ALB headers (useful for debugging).
         """
         return {
             "message": f"Welcome to {settings.app_name}",
@@ -162,9 +162,13 @@ def create_app() -> FastAPI:
             "headers": (
                 {
                     "host": request.headers.get("host"),
-                    "x-real-ip": request.headers.get("x-real-ip"),
                     "x-forwarded-for": request.headers.get("x-forwarded-for"),
                     "x-forwarded-proto": request.headers.get("x-forwarded-proto"),
+                    "x-forwarded-port": request.headers.get("x-forwarded-port"),
+                    "x-amzn-trace-id": request.headers.get(
+                        "x-amzn-trace-id"
+                    ),  # Specific to AWS
+                    "user-agent": request.headers.get("user-agent"),
                 }
                 if settings.debug
                 else "hidden in production"
