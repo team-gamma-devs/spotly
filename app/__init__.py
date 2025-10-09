@@ -1,37 +1,16 @@
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
-import logging
 import time
 
 from app.settings import settings
+from app.logger import get_logger
 from app.api import api_router
+from app.api import health
+from app.infrastructure.database.lifespan import lifespan
 
-from app.infrastructure.repositories.database import Database
-
-# Configure logging
-logging.basicConfig(
-    level=getattr(logging, settings.log_level.upper()),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger(__name__)
-
-# Global db_instance
-db_instance = None
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global db_instance
-    db_instance = await Database.connect_db(
-        mongodb_url=settings.mongodb_url, database_name=settings.mongodb_db_name
-    )
-
-    yield
-
-    await Database.close_db()
+logger = get_logger(__name__)
 
 
 def create_app() -> FastAPI:
@@ -97,86 +76,9 @@ def create_app() -> FastAPI:
 
         return response
 
-    # ============================================
-    # HEALTH CHECK ENDPOINTS
-    # ============================================
-
-    @app.get("/health", tags=["Health"], include_in_schema=False)
-    async def health_check():
-        """
-        Basic health check for nginx, docker, and kubernetes.
-        No authentication required.
-        """
-        return {
-            "status": "healthy",
-            "service": settings.app_name,
-            "environment": settings.app_env,
-        }
-
-    @app.get("/health/ready", tags=["Health"], include_in_schema=False)
-    async def readiness_check():
-        """
-        Readiness probe - checks if app is ready to receive traffic.
-        Verifies database connections, etc.
-        """
-        try:
-            # Verify MongoDB connection
-            await db_instance.client.admin.command("ping")
-
-            return {
-                "status": "ready",
-                "database": "connected",
-            }
-        except Exception as e:
-            logger.error(f"Readiness check failed: {e}")
-            return JSONResponse(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                content={
-                    "status": "not_ready",
-                    "database": "disconnected",
-                    "error": str(e),
-                },
-            )
-
-    @app.get("/health/live", tags=["Health"], include_in_schema=False)
-    async def liveness_check():
-        """
-        Liveness probe - checks if app is alive (not hung).
-        """
-        return {"status": "alive"}
-
-    # ============================================
-    # ROOT ENDPOINT (for testing)
-    # ============================================
-
-    @app.get("/", tags=["Root"])
-    async def root(request: Request):
-        """
-        Root endpoint - shows API info and ALB headers (useful for debugging).
-        """
-        return {
-            "message": f"Welcome to {settings.app_name}",
-            "version": "1.0.0",
-            "environment": settings.app_env,
-            "docs": "/docs" if settings.debug else "disabled in production",
-            "headers": (
-                {
-                    "host": request.headers.get("host"),
-                    "x-forwarded-for": request.headers.get("x-forwarded-for"),
-                    "x-forwarded-proto": request.headers.get("x-forwarded-proto"),
-                    "x-forwarded-port": request.headers.get("x-forwarded-port"),
-                    "x-amzn-trace-id": request.headers.get(
-                        "x-amzn-trace-id"
-                    ),  # Specific to AWS
-                    "user-agent": request.headers.get("user-agent"),
-                }
-                if settings.debug
-                else "hidden in production"
-            ),
-        }
-
     # INCLUDE ROUTERS
     app.include_router(api_router)
+    app.include_router(health.router)
 
     # EXCEPTION HANDLERS
     @app.exception_handler(404)

@@ -2,7 +2,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from typing import Optional
 
 
-class Database:
+class MongoDB:
     client: Optional[AsyncIOMotorClient] = None
 
     @classmethod
@@ -16,3 +16,7 @@ class Database:
         """Close conection to MongoDB"""
         if cls.client:
             cls.client.close()
+
+    @classmethod
+    def get_database(cls):
+        return cls.client["mi_db"]
