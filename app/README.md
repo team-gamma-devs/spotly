@@ -71,8 +71,7 @@ MONGODB_URL=mongodb://USERNAME:PASSWORD@mongo:27017 # Use the above credentials
 ## 5. Activate Poetry Virtual Environment
 
 ```bash
-poetry env activate
-source $(poetry env info --path)/bin/activate
+source $(poetry env activate)
 ```
 
 ---
