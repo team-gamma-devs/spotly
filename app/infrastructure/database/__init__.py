@@ -16,7 +16,3 @@ class MongoDB:
         """Close conection to MongoDB"""
         if cls.client:
             cls.client.close()
-
-    @classmethod
-    def get_database(cls):
-        return cls.client["mi_db"]

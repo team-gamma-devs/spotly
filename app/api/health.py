@@ -30,9 +30,8 @@ async def readiness_check():
     Verifies database connections, etc.
     """
     try:
-        db = MongoDB.get_database()
         # Verify MongoDB connection
-        await db.command("ping")
+        await MongoDB.client.command("ping")
 
         return {
             "status": "ready",
