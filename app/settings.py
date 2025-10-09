@@ -123,7 +123,7 @@ def get_settings() -> BaseSettingsClass:
     Factory function that returns the correct configuration based on APP_ENV.
     Uses @lru_cache internally to instantiate only once.
     """
-    env = os.getenv("APP_ENV", "production").lower()
+    env = os.getenv("APP_ENV", "development").lower()
 
     settings_map = {
         "development": DevelopmentSettings,
@@ -131,7 +131,7 @@ def get_settings() -> BaseSettingsClass:
         "staging": StagingSettings,
     }
 
-    settings_class = settings_map.get(env, ProductionSettings)
+    settings_class = settings_map.get(env, DevelopmentSettings)
     return settings_class()
 
 
