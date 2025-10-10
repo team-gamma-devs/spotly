@@ -32,7 +32,11 @@ class CSVInvitationProcessor:
         if not reader.fieldnames:
             raise InvalidCSVException("CSV is empty or missing header")
 
-        missing = [col for col in self.REQUIRED_COLUMNS if col not in reader.fieldnames]
+        missing = [
+            col
+            for col in self.REQUIRED_COLUMNS
+            if col not in reader.fieldnames
+        ]
         if missing:
             raise MissingColumnsException(missing)
 
@@ -51,11 +55,56 @@ class CSVInvitationProcessor:
 
     def _send_invitations(self, invitations: List[Invitation]):
         for invitation in invitations:
+            body = f"""
+            <div style="
+                width: 100%;
+                min-height: 300px;
+                max-width: 1200px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                font-family: Arial, sans-serif;
+            ">
+                <section id="header" style="
+                        background: linear-gradient(to right, #cb5554, #e9a075);
+                        padding: 20px;
+                        color: rgb(234, 245, 255);
+                        font-family: Arial, sans-serif;
+                    ">
+                <h1 style="margin: 0; margin-left: 20px;">Welcome to Spotly!</h1>
+                </section>
+
+                <section id="body" style="
+                    padding: 20px;
+                    font-family: Arial, sans-serif;
+                ">
+                    <p>Hello! {invitation.full_name}</p>
+                    <p>To log in and start using Spotly please use this link: <span style="color: red">http://spotly.work/sign-up/{invitation.token}</span></p>
+                </section>
+                
+                <section id="footer" style="
+                    background: linear-gradient(to right, #cb5554, #e9a075);
+                    padding: 20px;
+                    color: rgb(234, 245, 255);
+                    font-family: Arial, sans-serif;
+                    text-align: center;
+                    font-size: 0.9em;
+                    margin-top: 20px;
+                ">
+                    <p style="margin: 0.5em 0;">Thanks for using Spotly!</p>
+                    <p style="margin: 0.5em 0; font-size: 0.8em;">
+                        If you have any questions, contact a
+                        <a href="https://spotly.work/contact" style="color: rgb(234, 245, 255); text-decoration: underline;">Spotly Supervisor</a>
+                        agent
+                    </p>
+                    <p style="margin: 0.5em 0; font-size: 0.7em; opacity: 0.8;">
+                        2025 Spotly. Pending Rights Reservation.
+                    </p>
+                </section>
+            </div>
+            """
+
             self.email_service.send_email(
                 invitation.email,
                 "Spotly app invitation from Holberton",
-                f"<strong>Hola! {invitation.full_name}</strong>\
-                    <br>\
-                    <br>\
-                    <p>Esta es una invitación de prueba</p>",
+                body,
             )

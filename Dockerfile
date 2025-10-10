@@ -10,7 +10,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Install dependencies for building only
 RUN apt-get update && apt-get install -y \
     curl build-essential \
-    && curl -sSL https://install.python-poetry.org | python3 - \
+    && curl -sSL https://install.python-poetry.org | POETRY_VERSION=2.2.1 python3 - \
     && rm -rf /var/lib/apt/lists/*
 
 ENV PATH="$POETRY_HOME/bin:$PATH"

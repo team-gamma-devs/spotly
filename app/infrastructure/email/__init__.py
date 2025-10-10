@@ -3,5 +3,5 @@ from app.settings import settings
 
 
 resend_email_service = ResendEmailService(
-    settings.resend_api_key, "onboarding@resend.dev"
+    settings.resend_api_key, "holbertonschool@spotly.work"
 )

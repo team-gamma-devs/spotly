@@ -1,44 +1,16 @@
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
-import logging
 import time
 
 from app.settings import settings
+from app.logger import get_logger
 from app.api import api_router
-from app.database import connect_to_mongo, close_mongo_connection
+from app.api import health
+from app.infrastructure.database.lifespan import lifespan
 
-# Configure logging
-logging.basicConfig(
-    level=getattr(logging, settings.log_level.upper()),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger(__name__)
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """
-    Lifespan context manager for startup and shutdown events.
-    Replaces deprecated @app.on_event decorators.
-    """
-    # Startup
-    logger.info(f"🚀 Starting {settings.app_name} in {settings.app_env} mode...")
-
-    try:
-        # Connect to MongoDB
-        await connect_to_mongo()
-        logger.info("✅ Application startup complete")
-
-        yield  # Application is running
-
-    finally:
-        # Shutdown
-        logger.info(f"🛑 Shutting down {settings.app_name}...")
-        await close_mongo_connection()
-        logger.info("✅ Application shutdown complete")
+logger = get_logger(__name__)
 
 
 def create_app() -> FastAPI:
@@ -104,92 +76,11 @@ def create_app() -> FastAPI:
 
         return response
 
-    # ============================================
-    # HEALTH CHECK ENDPOINTS
-    # ============================================
-
-    @app.get("/health", tags=["Health"], include_in_schema=False)
-    async def health_check():
-        """
-        Basic health check for nginx, docker, and kubernetes.
-        No authentication required.
-        """
-        return {
-            "status": "healthy",
-            "service": settings.app_name,
-            "environment": settings.app_env,
-        }
-
-    @app.get("/health/ready", tags=["Health"], include_in_schema=False)
-    async def readiness_check():
-        """
-        Readiness probe - checks if app is ready to receive traffic.
-        Verifies database connections, etc.
-        """
-        try:
-            from app.database import db
-
-            # Verify MongoDB connection
-            await db.client.admin.command("ping")
-
-            return {
-                "status": "ready",
-                "database": "connected",
-            }
-        except Exception as e:
-            logger.error(f"Readiness check failed: {e}")
-            return JSONResponse(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                content={
-                    "status": "not_ready",
-                    "database": "disconnected",
-                    "error": str(e),
-                },
-            )
-
-    @app.get("/health/live", tags=["Health"], include_in_schema=False)
-    async def liveness_check():
-        """
-        Liveness probe - checks if app is alive (not hung).
-        """
-        return {"status": "alive"}
-
-    # ============================================
-    # ROOT ENDPOINT (for testing)
-    # ============================================
-
-    @app.get("/", tags=["Root"])
-    async def root(request: Request):
-        """
-        Root endpoint - shows API info and nginx headers (useful for debugging).
-        """
-        return {
-            "message": f"Welcome to {settings.app_name}",
-            "version": "1.0.0",
-            "environment": settings.app_env,
-            "docs": "/docs" if settings.debug else "disabled in production",
-            "headers": (
-                {
-                    "host": request.headers.get("host"),
-                    "x-real-ip": request.headers.get("x-real-ip"),
-                    "x-forwarded-for": request.headers.get("x-forwarded-for"),
-                    "x-forwarded-proto": request.headers.get("x-forwarded-proto"),
-                }
-                if settings.debug
-                else "hidden in production"
-            ),
-        }
-
-    # ============================================
     # INCLUDE ROUTERS
-    # ============================================
-
     app.include_router(api_router)
+    app.include_router(health.router)
 
-    # ============================================
     # EXCEPTION HANDLERS
-    # ============================================
-
     @app.exception_handler(404)
     async def not_found_handler(request: Request, exc):
         return JSONResponse(
@@ -223,6 +114,6 @@ def create_app() -> FastAPI:
             },
         )
 
-    logger.info(f"✅ {settings.app_name} configured successfully")
+    logger.info(f"{settings.app_name} configured successfully")
 
     return app

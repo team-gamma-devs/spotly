@@ -159,12 +159,11 @@ class Invitation:
 
     def to_dict(self) -> dict:
         """
-        Serialize the Invitation to a dictionary suitable for MongoDB.
-
+        Serialize the Invitation to a dictionary.
         Note: returns datetimes as datetime objects (PyMongo accepts these).
         """
         return {
-            "_id": self.id,
+            "id": self.id,
             "full_name": self.full_name,
             "email": self.email,
             "cohort": self.cohort,
@@ -174,16 +173,6 @@ class Invitation:
             "created_at": self.created_at,
             "expires_at": self.expires_at,
         }
-
-    @classmethod
-    def from_db(cls, **kwargs):
-        """
-        Create an Invitation from a DB document.
-
-        Expects Mongo-style `_id` field.
-        """
-        kwargs["id"] = str(kwargs.pop("_id"))
-        return cls(**kwargs)
 
     @staticmethod
     def validate_string(value: str, field_name: str) -> str:
