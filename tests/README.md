@@ -68,8 +68,9 @@
 comando para tener mas informacion y data de cobertura `pytest --cov=.`
 
 ### progreso hasta ahora:
-* **test_invitation**
+- **test_invitation**
 >En este archivo se testio la creacion exitosa de una instancia de Invitation, simulando (mocks) las dependencias que utiliza (secrets, uuid, datatime).
+
     -     Se verifico la exitosa creacion comparando la igualdad de los valores ingresados (y simulados)
           con los valores que guardo la instancia creada.
           Tambien se testio y verifico el estado del token y del log, se verificaron las
@@ -88,7 +89,7 @@ comando para tener mas informacion y data de cobertura `pytest --cov=.`
     -     se testiaron las posibles excepciones de el campo expires_at verificando la respuesta exitosa
           con una fecha invalida y con una fecha anterior a la creacion de la instancia.```
 
-* **test_csv_invitation**
+- **test_csv_invitation**
 >simulando las dependencias que el archivo csv_invitation necesita se testio cada funcion interna y por ultimo una prueba de integracion en la cual recorremos todo el proceso
 
     -     la validacion del csv, creando una prueba exitosa y verificando que el tipo de dato de la respuesta
@@ -116,3 +117,49 @@ comando para tener mas informacion y data de cobertura `pytest --cov=.`
           con el mock del servicio de email verificamos que fue llamado la misma cantidad de veces como
           instancias teniamos e igual a la cantidad de objetos en el csv, tambien verificamos que una
           de las llamadas contiene los valores esperados segun nuestra data en el csv.
+
+- **test_base_repository**
+>para ejecutar exitosamente este archivo de test es necesario instalar `pytest-asyncio`
+>>en este archivo se simula (mocks) el modelo y la coleccion para poder generar una instancia del repo con mocks, se intercepta la funcion RealObjectId para forzarla a retornar objetos ficticios que eluden las excepciones y tambien se creo un mock para simular el comportamiento de `__aiter__`
+
+    -     primero se valido la funcionalidad de to_dict() la cual se encarga de convertir la clave del id
+          a la forma esperada por nuestra base de datos. se verifica que la clave _id contiene el id 
+          utilizado, que la clave id no esta en la respuesta (doc) y que el nombre cohincide
+
+    -     se valida la creacion de una entidad, se configuran los datos del objeto y la respuesta del metodo.
+          se verifica que el metodo fue llamado una vez y que la respuesta cohincide con el 
+          inserted_id esperado
+
+    -     find_by_id, se configura el mock, la respuesta del metodo y se llama a este, verificamos que
+          el metodo fue llamado una vez y que la data llego completa.
+          tambien se testio la posible respuesta none para terminar de cubrir el archivo.
+
+    -     find_all, se crea una lista con datos validos y aca se utiliza el mock que simula a
+          asynchronous iterator para generar una respuesta valida del metodo.
+          se llama al metodo y se verifica que fue llamado una sola vez, que fue llamado con un diccionario 
+          vacio, que la respuesta es una lista, que el largo de esa lista es de la misma cantidad de objetos
+          y que la data cohincide.
+
+    -     find_all_with_filters, mismos pasos que en el test anterior pero esta vez se llama al metodo
+          con un diccionario que contiene dos filtros, se verifica que fue llamado una vez, que fue llamado con x filtros, que el largo de la lista cohincide con los filtros y que la data cohincide
+
+    -     update, se simula una id valida y se crea un objeto simulado que contiene el atributo a testiar,
+          se simula la respuesta esperada y se llama al metodo.
+          se verifica que el metodo fue llamado una vez, que la llamada se solicito con los atributos y
+          la forma esperada (incluyendo las claves requeridas), que la respuesta fue un booleano y fue True
+
+    -     update_not_modified, misma logica que en test previo, solo que ahora definimos el atributo a      
+          testiar en false para simular un objeto que no fue encontrado.
+          se realizan la mayoria de verificaciones anteriores y la verificacion de false en la respuesta
+
+    -     update_failure, se fuerza a levantar una excepcion utilizando un id que no es valido.
+          se verifica la correcta conexion del metodo con las excepciones de la libreria involucrada
+
+    -     delete, la respuesta es la misma que update asi que se aplica la misma logica, se simula un id
+          valido, se crea un objeto simulado con el atributo que nesecitamos y se llama al metodo.
+          se verifica que el metodo fue llamado una vez y que la llamada se realizo de la forma esperada,
+          ademas de verificar que la respuesta es un booleano y es true
+
+    -     not object_to_delete, misma logica pero se simula que no se encontro al objeto, se verifica que
+          el metodo fue llamado una vez, de la forma esperada y que la respuesta fue un booleano en false
+

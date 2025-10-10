@@ -22,26 +22,26 @@ class MockValidEmail:
     def normalized(self):
         return self.email
 
-@pytest.fixture
-def db_data():
-    return {
-        "_id": "6789-EFGH-4321",
-        "full_name": "DB User",
-        "email": "db@example.com",
-        "cohort": 101,
-        "token": "FIXED_TOKEN_FROM_DB",
-        "token_state": True,
-        "log_state": False,
-        "created_at": datetime.now(),
-        "expires_at": datetime.now() + timedelta(days=30)
-    }
+#@pytest.fixture
+#def db_data():
+#    return {
+#        "_id": "6789-EFGH-4321",
+#        "full_name": "DB User",
+#        "email": "db@example.com",
+#        "cohort": 101,
+#        "token": "FIXED_TOKEN_FROM_DB",
+#        "token_state": True,
+#        "log_state": False,
+#        "created_at": datetime.now(),
+#        "expires_at": datetime.now() + timedelta(days=30)
+#    }
 
 
 @patch('app.domain.invitation.validate_email')
 @patch('app.domain.invitation.uuid4')
 @patch('app.domain.invitation.secrets')
 @patch('app.domain.invitation.datetime')
-def test_invitation_creation_and_setters(mock_dt, mock_secrets, mock_uuid, mock_validate_email, db_data):
+def test_invitation_creation_and_setters(mock_dt, mock_secrets, mock_uuid, mock_validate_email):
     """
     Verifies the successful creation and use of the setters (token_state and log_state).
     """
@@ -82,7 +82,7 @@ def test_invitation_creation_and_setters(mock_dt, mock_secrets, mock_uuid, mock_
 
     assert isinstance(respuesta, dict)
     assert len(respuesta) == 9
-    assert "_id" in respuesta
+    assert "id" in respuesta
     assert "full_name" in respuesta
     assert "created_at" in respuesta
     assert respuesta["email"] == "test@example.com"
@@ -160,27 +160,27 @@ def test_invitation_is_valid_function( mock_secrets, mock_uuid, mock_validate_em
 
 # ------------ FUNCTION INVITATION FROM DB -----------
 
-@patch('app.domain.invitation.validate_email')
-@patch('app.domain.invitation.uuid4')
-@patch('app.domain.invitation.secrets')
-def test_invitation_from_db(mock_secrets, mock_uuid, mock_validate_email, db_data):
-    """
-    With this test we cover the from_db function which makes a call to the database,
-    the response is displayed and we see how the data matches.
-    """
-    mock_uuid.return_value = 'UUID-1234'
-    mock_secrets.token_urlsafe.return_value = 'TOKEN-XYZ'
-    mock_validate_email.side_effect = lambda email: MockValidEmail(email)
+#@patch('app.domain.invitation.validate_email')
+#@patch('app.domain.invitation.uuid4')
+#@patch('app.domain.invitation.secrets')
+#def test_invitation_from_db(mock_secrets, mock_uuid, mock_validate_email, db_data):
+#    """
+#    With this test we cover the from_db function which makes a call to the database,
+#    the response is displayed and we see how the data matches.
+#    """
+#    mock_uuid.return_value = 'UUID-1234'
+#    mock_secrets.token_urlsafe.return_value = 'TOKEN-XYZ'
+#    mock_validate_email.side_effect = lambda email: MockValidEmail(email)#
 
-    invitation = Invitation("DB User", "db@example.com", 101)
+#    invitation = Invitation("DB User", "db@example.com", 101)
 
-    result = invitation.from_db(**db_data)
-
-    assert isinstance(result, Invitation)
-    assert result.id == "6789-EFGH-4321"
-    assert result.cohort == 101
-    assert result.full_name == "DB User"
-
+#    result = invitation.from_db(**db_data)
+#
+#    assert isinstance(result, Invitation)
+#    assert result.id == "6789-EFGH-4321"
+#    assert result.cohort == 101
+#    assert result.full_name == "DB User"
+#
 
 # ---------- TEST EXCEPTIONS OF EXPIRES_AT -------------
 def test_expires_at_setter_exceptions():

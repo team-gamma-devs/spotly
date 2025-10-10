@@ -1,59 +1,128 @@
-# Git Gud Stats - Backend App
+# Spotly - Local Development & Deployment Guide
 
-## Purpose
+## Prerequisites
 
-This folder contains the backend logic for the Git Gud Stats project, built with FastAPI. It provides endpoints to fetch and process GitHub user statistics using both REST and GraphQL APIs.
-
-## Architecture Overview
-
-- **main.py**  
-  Application entry point. Runs the FastAPI app created in [`app.__init__.py`](app/__init__.py).
-
-- ****init**.py**  
-  App factory (`create_app`) that sets up FastAPI, CORS, OAuth, and includes API routers.
-
-- **settings.py**  
-  Loads configuration and secrets from environment variables using Pydantic Settings.
-
-### Subfolders
-
-- **api/**
-
-  - **endpoints.py**: Defines API routes for user stats and debugging.
-  - **schemas.py**: Pydantic models for request/response validation.
-  - **auth.py**: (Reserved for authentication logic.)
-  - ****init**.py**: Package marker.
-
-- **infraestructure/**
-
-  - **github/**
-    - **client.py**: Async client for GitHub GraphQL API.
-    - **queries.py**: GraphQL queries for user data.
-    - ****init**.py**: Package marker.
-  - **email/**: (Reserved for email integration.)
-  - ****init**.py**: Package marker.
-
-- **routers/**
-
-  - ****init**.py**: (Reserved for additional routers.)
-
-- **services/**
-
-  - **user_data_service.py**: Service for fetching and processing user data from GitHub.
-  - ****init**.py**: Package marker.
-
-- **utils/**
-  - **language_stats.py**: Functions for processing language statistics from GitHub data.
-  - **dependencies.py**: Helpers for authentication and request headers.
-  - ****init**.py**: Package marker.
-
-## Data Flow
-
-1. **Request** arrives at an API endpoint in [`api.endpoints`](app/api/endpoints.py).
-2. **Authentication** and headers are handled by [`utils.dependencies`](app/utils/dependencies.py).
-3. **Data fetching** from GitHub is performed by [`infraestructure.github.client`](app/infraestructure/github/client.py) and processed by [`services.user_data_service`](app/services/user_data_service.py).
-4. **Response** is validated and serialized using models in [`api.schemas`](app/api/schemas.py).
+- Python 3.11+
+- [Poetry](https://python-poetry.org/)
+- Docker & Docker Compose (for deployment)
 
 ---
 
-This modular structure makes the codebase maintainable and easy to extend.
+## 1. Install Poetry
+
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+Check if Poetry is available:
+
+```bash
+poetry --version
+```
+
+If Poetry is not found, add it to your PATH:
+
+1. Open your bash configuration:
+   ```bash
+   nano ~/.bashrc
+   ```
+2. Add this line at the end:
+   ```bash
+   export PATH="$HOME/.local/bin:$PATH"
+   ```
+3. Save and reload:
+   ```bash
+   source ~/.bashrc
+   ```
+
+---
+
+## 2. Clone the Repository
+
+```bash
+git clone https://github.com/team-gamma-devs/spotly.git
+cd spotly
+```
+
+---
+
+## 3. Install Dependencies
+
+```bash
+poetry install --no-root
+```
+
+---
+
+## 4. Environment Variables
+
+Create a .env file in the project root with the following variables:
+
+```env
+SECRET_KEY= # Generate with: openssl rand -hex 32
+RESEND_API_KEY= # Your Resend API key or email service key
+MONGO_INITDB_ROOT_USERNAME= # MongoDB username
+MONGO_INITDB_ROOT_PASSWORD= # MongoDB password
+MONGODB_URL=mongodb://USERNAME:PASSWORD@mongo:27017 # Use the above credentials
+```
+
+---
+
+## 5. Activate Poetry Virtual Environment
+
+```bash
+$(poetry env activate)
+```
+
+---
+
+## 6. Run the Application (Development)
+
+```bash
+uvicorn app.main:app --reload
+```
+
+---
+
+## 7. Deployment with Docker Compose
+
+### Install Docker & Docker Compose
+
+Follow [official Docker instructions](https://docs.docker.com/engine/install/) or use:
+
+```bash
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add Docker repository
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+  $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+
+# Install Docker & Compose
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+Verify installation:
+```bash
+sudo docker run hello-world
+```
+
+---
+
+### Build & Run Containers
+
+```bash
+docker compose build --no-cache
+docker compose up -d
+```
+
+The app will now be running on your server.
+
+---
+
