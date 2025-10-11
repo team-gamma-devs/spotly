@@ -3,7 +3,7 @@ import re
 import validators
 from typing import Optional, List
 
-from app.domain.dbmodel import BModel
+from app.domain.bmodel import BModel
 
 
 class User(BModel):
