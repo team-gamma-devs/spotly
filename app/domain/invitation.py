@@ -1,7 +1,7 @@
 from uuid import uuid4
 import secrets
 from datetime import datetime, timezone, timedelta
-from email_validator import validate_email, EmailNotValidError
+from app.domain.bmodel import BModel
 
 
 class Invitation:
@@ -50,9 +50,9 @@ class Invitation:
             TypeError, ValueError: If any input is invalid.
         """
         self.__id = id or str(uuid4())
-        self.__full_name = self.validate_string(full_name, "full_name")
-        self.__email = self.validate_email(email)
-        self.__cohort = self.validate_cohort(cohort)
+        self.__full_name = BModel.validate_string(full_name, "full_name")
+        self.__email = BModel.validate_email(email)
+        self.__cohort = BModel.validate_number(cohort, "cohort")
         self.__token = token or secrets.token_urlsafe(32)
         self.token_state = token_state
         self.log_state = log_state
@@ -173,39 +173,6 @@ class Invitation:
             "created_at": self.created_at,
             "expires_at": self.expires_at,
         }
-
-    @staticmethod
-    def validate_string(value: str, field_name: str) -> str:
-        """Validate non-empty string and strip whitespace."""
-        if not isinstance(value, str):
-            raise TypeError(f"{field_name} must be a string!")
-        value = value.strip()
-        if len(value) == 0:
-            raise ValueError(f"{field_name} cannot be empty!")
-        return value
-
-    @staticmethod
-    def validate_email(value: str) -> str:
-        """Validate email syntax using email_validator and return lowercased email."""
-        value = Invitation.validate_string(value, "email")
-        try:
-            valid = validate_email(value)
-            return valid.email.lower()
-        except EmailNotValidError as e:
-            raise ValueError(f"Invalid email: {e}")
-
-    @staticmethod
-    def validate_cohort(value: int) -> int:
-        """
-        Validate cohort number.
-
-        Uses `type(value) is not int` intentionally to reject booleans.
-        """
-        if type(value) is not int:
-            raise TypeError("Cohort must be a number")
-        if value <= 0:
-            raise ValueError("Cohort must be positive")
-        return value
 
     def __repr__(self):
         """Return a compact representation for debugging."""
