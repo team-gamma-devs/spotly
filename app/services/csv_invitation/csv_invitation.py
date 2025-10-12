@@ -1,5 +1,6 @@
 import csv
 from typing import List
+import logging
 
 from app.domain.invitation import Invitation
 from app.services.csv_invitation.exceptions import (
@@ -7,22 +8,77 @@ from app.services.csv_invitation.exceptions import (
     MissingColumnsException,
 )
 from app.infrastructure.email import resend_email_service
+from app.infrastructure.database.repositories.invitation_repository import (
+    InvitationRepository,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class CSVInvitationProcessor:
+    """
+    Handles the processing of CSV files containing graduate information.
+
+    Responsibilities:
+    1. Validates the CSV file for required columns and correct formatting.
+    2. Generates Invitation objects for each graduate.
+    3. Persists the invitations to the database via InvitationRepository.
+    4. Sends invitation emails using the configured email service.
+
+    Attributes:
+        REQUIRED_COLUMNS (List[str]): Columns required in the CSV file.
+        email_service: Service responsible for sending emails.
+        invitation_repo (InvitationRepository): Repository for saving invitations. Can be mocked for testing.
+    """
+
     REQUIRED_COLUMNS = ["first_name", "last_name", "cohort", "email"]
 
-    def __init__(self, email_service=resend_email_service):
-        self.email_service = email_service
+    def __init__(self, email_service=resend_email_service, invitation_repo=None):
+        """
+        Initializes the CSVInvitationProcessor with optional email service and invitation repository.
 
-    def process_csv(self, file_contents: bytes):
-        """Orquesta todo el flujo de validación, creación, guardado y envío"""
+        Args:
+            email_service: Optional; service used to send emails. Defaults to resend_email_service.
+            invitation_repo: Optional; instance of InvitationRepository or mock for testing.
+        """
+        self.email_service = email_service
+        # invitation_repo parameter allows mocking the repository during testing.
+        self.invitation_repo = invitation_repo or InvitationRepository()
+
+    def process_csv(self, file_contents: bytes) -> List[Invitation]:
+        """
+        Orchestrates the complete CSV processing flow.
+
+        Steps:
+        1. Validate CSV contents.
+        2. Generate Invitation objects.
+        3. Save invitations to the database.
+
+        Args:
+            file_contents (bytes): Raw CSV file contents.
+
+        Returns:
+            List[Invitation]: List of Invitation objects created from CSV.
+        """
         graduates = self._validate_csv(file_contents)
         invitations = self._generate_invitations(graduates)
+        self._save_invitations(invitations)
         return invitations
 
-    # Private methods (Modularization).
-    def _validate_csv(self, file_contents: bytes):
+    def _validate_csv(self, file_contents: bytes) -> List[dict]:
+        """
+        Validates CSV contents for correct formatting and required columns.
+
+        Args:
+            file_contents (bytes): Raw CSV file contents.
+
+        Returns:
+            List[dict]: List of dictionaries representing each row in the CSV.
+
+        Raises:
+            InvalidCSVException: If CSV is empty, malformed, or cannot be decoded.
+            MissingColumnsException: If required columns are missing.
+        """
         try:
             content = file_contents.decode("utf-8")
             reader = csv.DictReader(content.splitlines())
@@ -38,7 +94,16 @@ class CSVInvitationProcessor:
 
         return list(reader)
 
-    def _generate_invitations(self, graduates: list):
+    def _generate_invitations(self, graduates: list) -> List[Invitation]:
+        """
+        Generates Invitation objects from validated graduate data.
+
+        Args:
+            graduates (list): List of dictionaries representing graduates.
+
+        Returns:
+            List[Invitation]: List of Invitation objects.
+        """
         invitations = []
         for graduated in graduates:
             invitation = Invitation(
@@ -49,16 +114,57 @@ class CSVInvitationProcessor:
             invitations.append(invitation)
         return invitations
 
-    def send_invitations(self, invitations: List[Invitation]):
+    def _save_invitations(self, invitations: List[Invitation]):
+        """
+        Saves Invitation objects to the database using the repository.
+        Logs success or failure for each invitation.
+
+        Args:
+            invitations (List[Invitation]): List of Invitation objects to save.
+        """
         for invitation in invitations:
-            body = self._build_email_body(invitation)
-            self.email_service.send_email(
-                invitation.email,
-                "Spotly app invitation from Holberton",
-                body,
-            )
+            try:
+                self.invitation_repo.create(invitation.to_dict())
+                logger.info(f"Invitation saved successfully for {invitation.email}")
+            except Exception as e:
+                logger.error(
+                    f"Failed to save invitation for {invitation.email}: {str(e)}",
+                    exc_info=True,
+                )
+
+    def send_invitations(self, invitations: List[Invitation]):
+        """
+        Sends invitation emails for the provided Invitation objects.
+        Logs success or failure for each email.
+
+        Args:
+            invitations (List[Invitation]): List of Invitation objects to email.
+        """
+        for invitation in invitations:
+            try:
+                body = self._build_email_body(invitation)
+                self.email_service.send_email(
+                    invitation.email,
+                    "Spotly app invitation from Holberton",
+                    body,
+                )
+                logger.info(f"Invitation email sent successfully to {invitation.email}")
+            except Exception as e:
+                logger.error(
+                    f"Failed to send email to {invitation.email}: {str(e)}",
+                    exc_info=True,
+                )
 
     def _build_email_body(self, invitation: Invitation) -> str:
+        """
+        Builds the HTML body for the invitation email.
+
+        Args:
+            invitation (Invitation): The Invitation object for which to build the email.
+
+        Returns:
+            str: HTML string representing the email body.
+        """
         return f"""
         <div style="
             width: 100%;
