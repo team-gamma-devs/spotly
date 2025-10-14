@@ -30,6 +30,15 @@ class InvitationRepository(BaseRepository):
             logger.exception(f"Error parsing invitation by token {token}: {e}")
             return None
 
+    async def find_by_email(self, email: str) -> Optional[Dict[str, Any]]:
+        """Find invitation by email."""
+        try:
+            doc = await self.find_one({"email": email})
+            return doc
+        except Exception as e:
+            logger.exception(f"Error parsing invitation by token {email}: {e}")
+            return None
+
     async def find_by_state(self, state: bool) -> List[Dict[str, Any]]:
         """Find all invitations by state."""
         return await self.find_all({"log_state": "False"})
