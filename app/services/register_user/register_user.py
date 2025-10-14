@@ -12,7 +12,11 @@ logger = logging.getLogger(__name__)
 
 
 class RegisterUser:
-    def __init__(self, user_repo=None, invitation_repo=None):
+    def __init__(
+        self,
+        user_repo: UserRepository = None,
+        invitation_repo: InvitationRepository = None,
+    ):
         # self.process_cv = CVProcessor()
         self.user_repo = user_repo or UserRepository()
         self.invitation_repo = invitation_repo or InvitationRepository()
@@ -30,9 +34,9 @@ class RegisterUser:
             )
 
         invitation = Invitation(**invitation_data)
-        now = datetime.now(timezone.utc)
+        now = datetime.now()
         if invitation.expires_at < now:
             raise InvitationExpired(
                 "The invitation linked to the provided token is expired"
             )
-        return invitation.token_state
+        return True if invitation.token_state == False else False
