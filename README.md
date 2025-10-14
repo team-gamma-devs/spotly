@@ -48,6 +48,14 @@ cd spotly
 
 ## 3. Install Dependencies
 
+# Create a virtual env:
+
+```bash
+poetry env activate
+```
+
+# Install Dependences
+
 ```bash
 poetry install --no-root
 ```
@@ -115,7 +123,7 @@ sudo docker run hello-world
 
 ---
 
-### Build & Run Containers
+### Build & Run Containers (Production)
 
 ```bash
 docker compose build --no-cache
@@ -125,3 +133,12 @@ docker compose up -d
 The app will now be running on your server.
 
 ---
+
+### Build & Run Container For MongoDB (Development)
+
+```bash
+docker compose -f docker-compose.dev.yaml up -d
+
+# For destroy the container
+docker compose -f docker-compose.dev.yaml down -v
+```
