@@ -56,7 +56,9 @@ class Invitation:
         self.__token = token or secrets.token_urlsafe(32)
         self.token_state = token_state
         self.log_state = log_state
-        self.__created_at = created_at or datetime.now(timezone.utc)
+        self.__created_at = created_at.replace(tzinfo=timezone.utc) or datetime.now(
+            timezone.utc
+        )
         self.expires_at = expires_at
 
     @property
@@ -150,6 +152,8 @@ class Invitation:
             raise TypeError(f"Expires at must be a valid date")
         if value < self.created_at:
             raise ValueError("Expiration date must be after the creation date")
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
 
         self.__expires_at = value
 

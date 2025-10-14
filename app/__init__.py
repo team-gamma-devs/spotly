@@ -6,8 +6,8 @@ import time
 
 from app.settings import settings
 from app.logger import setup_logging, get_logger
-from app.api import api_router
-from app.api import health
+from app.api.routes import api_router
+from app.api.routes import health
 from app.infrastructure.database.lifespan import lifespan
 
 setup_logging()
