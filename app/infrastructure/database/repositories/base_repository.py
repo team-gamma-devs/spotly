@@ -1,6 +1,9 @@
 from typing import List, Optional, Dict, Any
 from motor.motor_asyncio import AsyncIOMotorCollection
 from bson import ObjectId
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class BaseRepository:
@@ -11,7 +14,7 @@ class BaseRepository:
         """Convert dict with 'id' to MongoDB document with '_id'."""
         doc = data.copy()
         if "id" in doc:
-            doc["_id"] = ObjectId(doc.pop("id"))
+            doc["_id"] = str(doc.pop("id"))
         return doc
 
     def _from_mongo_doc(
@@ -20,6 +23,8 @@ class BaseRepository:
         """Convert MongoDB document with '_id' to dict with 'id'."""
         if not doc:
             return None
+
+        logger.debug(f"Document before parsing: {doc}")
         result = doc.copy()
         result["id"] = str(result.pop("_id"))
         return result

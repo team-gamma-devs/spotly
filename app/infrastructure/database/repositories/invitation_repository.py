@@ -1,8 +1,11 @@
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import Optional, Dict, Any, List
+import logging
 
 from app.infrastructure.database.repositories.base_repository import BaseRepository
 from app.infrastructure.database import MongoDB
+
+logger = logging.getLogger(__name__)
 
 
 class InvitationRepository(BaseRepository):
@@ -20,7 +23,12 @@ class InvitationRepository(BaseRepository):
 
     async def find_by_token(self, token: str) -> Optional[Dict[str, Any]]:
         """Find invitation by token."""
-        return await self.find_one({"token": token})
+        try:
+            doc = await self.find_one({"token": token})
+            return doc
+        except Exception as e:
+            logger.exception(f"Error parsing invitation by token {token}: {e}")
+            return None
 
     async def find_by_state(self, state: bool) -> List[Dict[str, Any]]:
         """Find all invitations by state."""
