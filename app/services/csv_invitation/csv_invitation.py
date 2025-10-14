@@ -45,7 +45,7 @@ class CSVInvitationProcessor:
         # invitation_repo parameter allows mocking the repository during testing.
         self.invitation_repo = invitation_repo or InvitationRepository()
 
-    def process_csv(self, file_contents: bytes) -> List[Invitation]:
+    async def process_csv(self, file_contents: bytes) -> List[Invitation]:
         """
         Orchestrates the complete CSV processing flow.
 
@@ -62,7 +62,7 @@ class CSVInvitationProcessor:
         """
         graduates = self._validate_csv(file_contents)
         invitations = self._generate_invitations(graduates)
-        self._save_invitations(invitations)
+        await self._save_invitations(invitations)
         return invitations
 
     def _validate_csv(self, file_contents: bytes) -> List[dict]:
@@ -106,15 +106,18 @@ class CSVInvitationProcessor:
         """
         invitations = []
         for graduated in graduates:
-            invitation = Invitation(
-                full_name=f"{graduated['first_name']} {graduated['last_name']}",
-                cohort=int(graduated["cohort"]),
-                email=graduated["email"],
-            )
-            invitations.append(invitation)
+            try:
+                invitation = Invitation(
+                    full_name=f"{graduated['first_name']} {graduated['last_name']}",
+                    cohort=int(graduated["cohort"]),
+                    email=graduated["email"],
+                )
+                invitations.append(invitation)
+            except Exception as e:
+                logger.warning(f"Error creating invitation of {graduated}: {e}")
         return invitations
 
-    def _save_invitations(self, invitations: List[Invitation]):
+    async def _save_invitations(self, invitations: List[Invitation]):
         """
         Saves Invitation objects to the database using the repository.
         Logs success or failure for each invitation.
@@ -124,7 +127,7 @@ class CSVInvitationProcessor:
         """
         for invitation in invitations:
             try:
-                self.invitation_repo.create(invitation.to_dict())
+                await self.invitation_repo.create(invitation.to_dict())
                 logger.info(f"Invitation saved successfully for {invitation.email}")
             except Exception as e:
                 logger.error(
