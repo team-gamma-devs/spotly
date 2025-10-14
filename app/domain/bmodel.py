@@ -12,8 +12,8 @@ class BModel(ABC):
         updated_at: datetime | None = None,
     ):
         self.__id = id or str(uuid4())
-        self.__created_at = created_at or datetime.now(timezone.utc)
-        self.updated_at = updated_at or datetime.now(timezone.utc)
+        self.__created_at = created_at or datetime.now()
+        self.updated_at = updated_at or datetime.now()
 
     @property
     def id(self):

@@ -56,9 +56,7 @@ class Invitation:
         self.__token = token or secrets.token_urlsafe(32)
         self.token_state = token_state
         self.log_state = log_state
-        self.__created_at = created_at.replace(tzinfo=timezone.utc) or datetime.now(
-            timezone.utc
-        )
+        self.__created_at = created_at or datetime.now()
         self.expires_at = expires_at
 
     @property
@@ -146,14 +144,12 @@ class Invitation:
         If value is falsy (e.g. None), generate a default expires_at = now + 30 days.
         """
         if not value:
-            self.__expires_at = datetime.now(timezone.utc) + timedelta(days=30)
+            self.__expires_at = datetime.now() + timedelta(days=30)
             return
         if not isinstance(value, datetime):
             raise TypeError(f"Expires at must be a valid date")
         if value < self.created_at:
             raise ValueError("Expiration date must be after the creation date")
-        if value.tzinfo is None:
-            value = value.replace(tzinfo=timezone.utc)
 
         self.__expires_at = value
 
