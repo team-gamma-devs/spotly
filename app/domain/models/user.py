@@ -3,7 +3,7 @@ import re
 import validators
 from typing import Optional, List
 
-from app.domain.bmodel import BModel
+from app.domain.models.bmodel import BModel
 
 
 class User(BModel):
@@ -18,7 +18,7 @@ class User(BModel):
         github_info: Optional[str] = None,
         cv_info: Optional[str] = None,
         tutors_feedback: Optional[List[str]] = None,
-        is_admin: bool = False,
+        role: str = "graduate",
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ):
@@ -38,7 +38,7 @@ class User(BModel):
                 BModel.validate_uuid(feedback, "tutors_feedback")
                 for feedback in tutors_feedback
             ]
-        self.__is_admin = is_admin
+        self.__role = role
 
     @property
     def first_name(self):
@@ -73,8 +73,8 @@ class User(BModel):
         return self.__tutors_feedback
 
     @property
-    def is_admin(self):
-        return self.__is_admin
+    def role(self):
+        return self.__role
 
     @first_name.setter
     def first_name(self, value: str):
@@ -106,7 +106,7 @@ class User(BModel):
             "last_name": self.last_name,
             "email": self.email,
             "avatar_url": self.avatar_url,
-            "is_admin": self.is_admin,
+            "role": self.role,
         }
 
         if hasattr(self, f"_User__github_info"):
@@ -137,5 +137,5 @@ class User(BModel):
         return (
             f"User(id={self.id!r}, "
             f"first_name={self.first_name!r}, last_name={self.last_name!r}, "
-            f"email={self.email!r}, is_admin={self.is_admin!r})"
+            f"email={self.email!r}, role={self.role!r})"
         )
