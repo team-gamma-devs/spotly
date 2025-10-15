@@ -106,7 +106,6 @@ def create_app() -> FastAPI:
         Only allows requests from vercel-spotly client with valid HMAC signature.
         """
         frontend_secret = settings.frontend_secret
-        message = settings.frontend_message
 
         # Get signature, origin and message from headers
         request_signature = request.headers.get("X-Signature")
