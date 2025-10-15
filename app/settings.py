@@ -28,8 +28,12 @@ class BaseSettingsClass(BaseSettings):
     # Email (Resend)
     resend_api_key: str
 
+    # Gemini
+    gemini_api_key: str
+
     # Security
     secret_key: str
+    frontend_secret: str
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
