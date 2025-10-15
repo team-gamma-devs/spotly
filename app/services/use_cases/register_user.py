@@ -1,12 +1,15 @@
 import logging
 from datetime import datetime, timezone
 
-from app.domain.invitation import Invitation
+from app.domain.models.invitation import Invitation
 from app.infrastructure.database.repositories.user_repository import UserRepository
 from app.infrastructure.database.repositories.invitation_repository import (
     InvitationRepository,
 )
-from app.services.register_user.exceptions import InvitationNotFound, InvitationExpired
+from app.services.exceptions.register_user_exceptions import (
+    InvitationNotFound,
+    InvitationExpired,
+)
 
 logger = logging.getLogger(__name__)
 

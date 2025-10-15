@@ -1,7 +1,7 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, BackgroundTasks, status
 
-from app.services.csv_invitation.csv_invitation import CSVInvitationProcessor
-from app.services.csv_invitation.exceptions import (
+from app.services.use_cases.csv_invitation import CSVInvitationProcessor
+from app.services.exceptions.csv_invitation_exceptions import (
     InvalidCSVException,
     MissingColumnsException,
 )

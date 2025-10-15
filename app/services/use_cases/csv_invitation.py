@@ -2,8 +2,8 @@ import csv
 from typing import List
 import logging
 
-from app.domain.invitation import Invitation
-from app.services.csv_invitation.exceptions import (
+from app.domain.models.invitation import Invitation
+from app.services.exceptions.csv_invitation_exceptions import (
     InvalidCSVException,
     MissingColumnsException,
 )

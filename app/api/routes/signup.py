@@ -1,9 +1,13 @@
 from fastapi import APIRouter, UploadFile, HTTPException, status
 from fastapi import File, Query, Form
+from typing import Optional
 
 from app.logger import get_logger
-from app.services.register_user.register_user import RegisterUser
-from app.services.register_user.exceptions import InvitationNotFound, InvitationExpired
+from app.services.use_cases.register_user import RegisterUser
+from app.services.exceptions.register_user_exceptions import (
+    InvitationNotFound,
+    InvitationExpired,
+)
 
 logger = get_logger(__name__)
 
@@ -29,22 +33,24 @@ async def check_invitation_token(token: str = Query(...)):
     return {"token_state": token_state}
 
 
-@router.post("/", status_code=202)
+@router.post("/", status_code=status.HTTP_201_CREATED)
 async def sign_up(
     token: str = Query(...),
-    github_username: str = Form(...),
+    github_username: Optional[str] = Form(None),
     personal_cv: UploadFile = File(...),
     linkedin_cv: UploadFile = File(...),
-    avatar_img: UploadFile = File(...),
+    avatar_img: Optional[UploadFile] = File(None),
 ):
 
     for file in [personal_cv, linkedin_cv]:
         if file.content_type != "application/pdf":
             raise HTTPException(
-                status_code=400, detail=f"{file.filename} is not valid PDF"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"{file.filename} is not valid PDF",
             )
 
-    if not avatar_img.content_type.startswith("image/"):
+    if avatar_img and not avatar_img.content_type.startswith("image/"):
         raise HTTPException(
-            status_code=400, detail=f"{avatar_img.filename} is not a valid image"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{avatar_img.filename} is not a valid image",
         )
