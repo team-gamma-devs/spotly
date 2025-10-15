@@ -5,7 +5,7 @@ from fastapi import (
     Depends,
 )
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import datetime
+from datetime import datetime
 
 from app.api.schemas.auth_schemas import LoginRequest, LoginResponse, UserResponse
 from app.services.use_cases.user_login import AuthUser
