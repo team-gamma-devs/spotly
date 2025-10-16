@@ -107,8 +107,12 @@ class User(BModel):
             "email": self.email,
             "avatar_url": self.avatar_url,
             "role": self.role,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
         }
 
+        if hasattr(self, f"_User__id"):
+            data["id"] = self.id
         if hasattr(self, f"_User__github_info"):
             data["github_info"] = self.github_info
         if hasattr(self, "_User__cv_info"):
@@ -135,7 +139,6 @@ class User(BModel):
 
     def __repr__(self):
         return (
-            f"User(id={self.id!r}, "
             f"first_name={self.first_name!r}, last_name={self.last_name!r}, "
             f"email={self.email!r}, role={self.role!r})"
         )

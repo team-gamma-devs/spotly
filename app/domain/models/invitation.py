@@ -49,7 +49,8 @@ class Invitation:
         Raises:
             TypeError, ValueError: If any input is invalid.
         """
-        self.__id = id or str(uuid4())
+        if id:
+            self.__id = id
         self.__full_name = BModel.validate_string(full_name, "full_name")
         self.__email = BModel.validate_email(email)
         self.__cohort = BModel.validate_number(cohort, "cohort")
@@ -162,8 +163,7 @@ class Invitation:
         Serialize the Invitation to a dictionary.
         Note: returns datetimes as datetime objects (PyMongo accepts these).
         """
-        return {
-            "id": self.id,
+        data = {
             "full_name": self.full_name,
             "email": self.email,
             "cohort": self.cohort,
@@ -174,6 +174,10 @@ class Invitation:
             "expires_at": self.expires_at,
         }
 
+        if hasattr(self, f"_User__id"):
+            data["id"] = self.id
+        return data
+
     def __repr__(self):
         """Return a compact representation for debugging."""
-        return f"Invitation(id={self.id}, email={self.email}, cohort={self.cohort})"
+        return f"Invitation(email={self.email}, cohort={self.cohort})"

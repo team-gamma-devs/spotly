@@ -11,7 +11,8 @@ class BModel(ABC):
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ):
-        self.__id = id or str(uuid4())
+        if id:
+            self.__id = id
         self.__created_at = created_at or datetime.now()
         self.updated_at = updated_at or datetime.now()
 
@@ -59,11 +60,3 @@ class BModel(ABC):
         if value <= 0:
             raise ValueError(f"{field_name} must be positive")
         return value
-
-    @staticmethod
-    def validate_uuid(value: str, field_name: str) -> str:
-        try:
-            uuid_obj = UUID(value, version=4)
-            return str(uuid_obj)
-        except (ValueError, AttributeError, TypeError):
-            raise ValueError(f"Invalid UUID in {field_name}")
