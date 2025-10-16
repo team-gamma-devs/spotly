@@ -8,7 +8,7 @@ class Invitation:
     Represents an invitation for a user to join a cohort.
 
     Attributes:
-        id (str): Unique identifier for the invitation (UUID4).
+        id (str): Unique identifier for the invitation (ObjectId).
         full_name (str): Full name of the invited user (readonly).
         email (str): Email of the invited user (readonly, validated for syntax).
         cohort (int): Cohort number (readonly).
