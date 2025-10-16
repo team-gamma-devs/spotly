@@ -14,7 +14,7 @@ class UserRepository(BaseRepository):
             db (AsyncIOMotorDatabase, optional): MongoDB database instance.
                 Defaults to MongoDB.db singleton.
         """
-        self.db = db or MongoDB.db  # <-- default to singleton if no db passed
+        self.db = db or MongoDB.db
         collection = self.db["users"]
         super().__init__(collection)
 

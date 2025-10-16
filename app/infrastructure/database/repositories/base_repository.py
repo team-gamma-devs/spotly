@@ -14,7 +14,7 @@ class BaseRepository:
         """Convert dict with 'id' to MongoDB document with '_id'."""
         doc = data.copy()
         if "id" in doc:
-            doc["_id"] = str(doc.pop("id"))
+            doc["_id"] = ObjectId(doc.pop("id"))
         return doc
 
     def _from_mongo_doc(
