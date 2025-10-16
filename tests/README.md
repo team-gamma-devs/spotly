@@ -68,8 +68,8 @@
 comando para tener mas informacion y data de cobertura `pytest --cov=.`
 
 ### progreso hasta ahora:
-- **test_invitation**
->En este archivo se testio la creacion exitosa de una instancia de Invitation, simulando (mocks) las dependencias que utiliza (secrets, uuid, datatime).
+- **test_invitation_and_bmodel**
+>En este archivo se testio la creacion exitosa de una instancia de Invitation, simulando (mocks) las dependencias que utiliza (secrets, uuid, datatime). tambien se testea la clase base (bmodel.py), creando una clase que hereda de la misma para podes hacerle pruebas al constructor de Bmodel y tambien se testean los casos exitosos y las excepciones posibles de las funciones.
 
     -     Se verifico la exitosa creacion comparando la igualdad de los valores ingresados (y simulados)
           con los valores que guardo la instancia creada.
@@ -87,10 +87,29 @@ comando para tener mas informacion y data de cobertura `pytest --cov=.`
           encarga de validar el estado del token```
 
     -     se testiaron las posibles excepciones de el campo expires_at verificando la respuesta exitosa
-          con una fecha invalida y con una fecha anterior a la creacion de la instancia.```
+          con una fecha invalida y con una fecha anterior a la creacion de la instancia.
+
+    -     test_bmodel_constructor_with_data_from_db, aca es donde probamos el
+          constructor de Bmodel utilizando la simulacion para aislar la prueba,
+          se verifica que la data cohincide con lo declarado y que los atributos
+          de tiempo son del tipo datatime
+
+    -     test_bmodel_updated_at_setter, verificamos el recorrido exitoso del setter,
+          luego de crear la instancia modificamos la data y vemos que cohincide.
+          (arreglar esta funcion, caso exitoso con str)
+
+    -     test_validate_uuid, validamos el funcionamiento de dicha funcion, 
+          hacemos el test exitoso utilizando una id valida, y luego se hacen saltar
+          dos excepciones (ValueError) por una id que no es valida y por una id
+          que no es un string, en ambos casos se verifica el mensaje mostrado
+
+    -     test_validate_number, aca verificamos las excepciones de la funcion y
+          los mensajes que devuelven, ingresando un valor de cohorte negativo y
+          y booleano (este ultimo para validar la intencion de back-end)
 
 - **test_csv_invitation**
 >simulando las dependencias que el archivo csv_invitation necesita se testio cada funcion interna y por ultimo una prueba de integracion en la cual recorremos todo el proceso
+>>se necesita instalar pytest-asyncio para que funcione
 
     -     la validacion del csv, creando una prueba exitosa y verificando que el tipo de dato de la respuesta
           es una lista, se comprobo que contiene la misma cantidad de objetos que ingresamos en el csv
@@ -108,7 +127,13 @@ comando para tener mas informacion y data de cobertura `pytest --cov=.`
     -     envio de invitaciones, simulando FRE (Ficticia Respuesta Exitosa) de la anterior funcion se testio
           que la cantidad de veces que fue llamado el servicio de email para mandar las invitaciones es igual
           a la cantidad de objetos en la FRE, ademas se verifico la concordancia entre los valores esperados
-          y los valores que la funcion utilizo para llamar al mock (simulacion) de el servicio de email.
+          (y los valores que la funcion utilizo para llamar al mock (simulacion) de el servicio de email.) NO SE TESTEA
+          se verifica que la funcion al fallar llama correctamente al logger
+
+    -     test_save_invitations_handles_exceptions, se testio la funcion 
+          que guarda las invitaciones, se verifica que la funcion llama a 
+          invitation_repo la misma cantidad que invitaciones y se verifica 
+          el correcto llamado a logger con los mensajes esperados
 
     -     process_csv se hizo una prueba de integracion aislada (con mocks) del recorrido de la data por todo
           el archivo, se simulo (mock) un csv y fuimos verificando las distintas llamadas que hace la funcion,
@@ -116,11 +141,11 @@ comando para tener mas informacion y data de cobertura `pytest --cov=.`
           hubo igualdad con los datos de nuestro csv(mock) en una de las llamadas.
           con el mock del servicio de email verificamos que fue llamado la misma cantidad de veces como
           instancias teniamos e igual a la cantidad de objetos en el csv, tambien verificamos que una
-          de las llamadas contiene los valores esperados segun nuestra data en el csv.
+          de las llamadas contiene los valores esperados segun nuestra data en el csv. ademas verificamos que el servicio de invitation_repo fue llamado dos veces
 
 - **test_base_repository**
 >para ejecutar exitosamente este archivo de test es necesario instalar `pytest-asyncio`
->>en este archivo se simula (mocks) el modelo y la coleccion para poder generar una instancia del repo con mocks, se intercepta la funcion RealObjectId para forzarla a retornar objetos ficticios que eluden las excepciones y tambien se creo un mock para simular el comportamiento de `__aiter__`
+>>NO(en este archivo se simula (mocks) el modelo y la coleccion para poder generar una instancia del repo con mocks)NO, se intercepta la funcion RealObjectId para forzarla a retornar objetos ficticios que eluden las excepciones y tambien se creo un mock para simular el comportamiento de `__aiter__`
 
     -     primero se valido la funcionalidad de to_dict() la cual se encarga de convertir la clave del id
           a la forma esperada por nuestra base de datos. se verifica que la clave _id contiene el id 
@@ -163,3 +188,13 @@ comando para tener mas informacion y data de cobertura `pytest --cov=.`
     -     not object_to_delete, misma logica pero se simula que no se encontro al objeto, se verifica que
           el metodo fue llamado una vez, de la forma esperada y que la respuesta fue un booleano en false
 
+    -     test_exists_true, test_exists_false, test_exists_exception, estos
+          test cubren la funcion exists, la cual verifica que el documento
+          exita, se con simulaciones se testea que el documento existe,
+          un documento inexistente y se verifica una excepcion.
+
+    -     test_count_with_filters, test_count_without_filters. con estos
+          test cubrimos la funcion count con filtros y sin filtros, la cual 
+          cuenta documentos. se verifica que la funcion hizo la llamada con
+          los atributos esperados en el primer caso y verificando la
+          cohincidencia de documentos recibidos 

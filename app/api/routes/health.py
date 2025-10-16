@@ -7,7 +7,7 @@ from app.infrastructure.database import MongoDB
 
 logger = get_logger(__name__)
 
-router = APIRouter(tags=["Health"])
+router = APIRouter()
 
 
 @router.get("/health", tags=["Health"], include_in_schema=False)
@@ -57,11 +57,7 @@ async def liveness_check():
     return {"status": "alive"}
 
 
-# ============================================
 # ROOT ENDPOINT (for testing)
-# ============================================
-
-
 @router.get("/", tags=["Root"])
 async def root(request: Request):
     """
@@ -78,9 +74,7 @@ async def root(request: Request):
                 "x-forwarded-for": request.headers.get("x-forwarded-for"),
                 "x-forwarded-proto": request.headers.get("x-forwarded-proto"),
                 "x-forwarded-port": request.headers.get("x-forwarded-port"),
-                "x-amzn-trace-id": request.headers.get(
-                    "x-amzn-trace-id"
-                ),  # Specific to AWS
+                "x-amzn-trace-id": request.headers.get("x-amzn-trace-id"),
                 "user-agent": request.headers.get("user-agent"),
             }
             if settings.debug

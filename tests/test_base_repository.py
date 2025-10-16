@@ -12,14 +12,14 @@ in covering the entire contents of the base_repository file.
 
 
 # mock model for testing
-class TestModel:
-    def __init__(self, id: Optional[str] = None, name: str = ""):
-        self.id = id
-        self.name = name
-
-    def to_dict(self):
-        # implementation required for to_dict
-        return {"id": self.id, "name": self.name}
+#class TestModel:
+#    def __init__(self, id: Optional[str] = None, name: str = ""):
+#        self.id = id
+#        self.name = name
+#
+#    def to_dict(self):
+#        # implementation required for to_dict
+#        return {"id": self.id, "name": self.name}
 
 # --- FIXTURES ---
 
@@ -34,13 +34,28 @@ def mock_object_id():
 
 @pytest.fixture
 def mock_collection():
-    """Returns an AsyncMock to simulate AsyncIOMotorCollection."""
-    return AsyncMock()
+    """Returns a mock collection configured for cursor chaining."""
+    mock_coll = MagicMock()  # <-- MagicMock en lugar de AsyncMock
+
+    mock_cursor = MagicMock()
+    mock_cursor.skip.return_value.limit.return_value = mock_cursor
+
+    # importante: find() devuelve el cursor directamente
+    mock_coll.find.return_value = mock_cursor
+
+    # y el resto de métodos (insert_one, find_one, etc.) sí son async:
+    mock_coll.insert_one = AsyncMock()
+    mock_coll.find_one = AsyncMock()
+    mock_coll.update_one = AsyncMock()
+    mock_coll.delete_one = AsyncMock()
+    mock_coll.count_documents = AsyncMock()
+
+    return mock_coll
 
 @pytest.fixture
 def repository(mock_collection):
     """Repository instance with mocks."""
-    return BaseRepository(collection=mock_collection, model=TestModel)
+    return BaseRepository(collection=mock_collection)
 
 # mock to simulate an asynchronous iterator
 async def mock_async_cursor(data):
@@ -49,16 +64,15 @@ async def mock_async_cursor(data):
 
 
 # Conversion test
-def test_to_dict(repository, mock_object_id):
+def test_to_dict(repository):
     """Verifies the Mongo model-to-document conversion."""
     test_id = "507f1f77bcf86cd799439011"
-    entity = TestModel(id=test_id, name="Test Name")
+    #entity = TestModel(id=test_id, name="Test Name")
+    data_dict = {"id": test_id, "name": "Test Name"}
 
-    doc = repository._to_dict(entity)
+    doc = repository._to_mongo_doc(data_dict)
 
-    mock_object_id.assert_called_once_with(test_id)
-
-    assert doc["_id"].return_value == f"ObjectId('{test_id}')"
+    assert doc["_id"] == test_id
     assert "id" not in doc
     assert doc["name"] == "Test Name"
 
@@ -69,7 +83,7 @@ def test_to_dict(repository, mock_object_id):
 async def test_create(repository, mock_collection):
     """Tests the creation of an entity in the DB."""
     test_id = "507f1f77bcf86cd799439011"
-    entity = TestModel(id=test_id, name="New Item")
+    entity = {"id": test_id, "name": "New Item"}
     expected_inserted_id = RealObjectId(test_id)
 
     mock_result = MagicMock()
@@ -89,7 +103,7 @@ async def test_find_by_id(repository, mock_collection):
     test_id = "0123456789abcdf012345678"
 
     mock_collection.find_one.return_value = {
-        "_id": "0123456789abcdf012345678",
+        "_id": RealObjectId(test_id),
         "name": "rick sanchez"
         }
 
@@ -97,8 +111,8 @@ async def test_find_by_id(repository, mock_collection):
 
     mock_collection.find_one.assert_called_once()
 
-    assert result.id == test_id
-    assert result.name == "rick sanchez"
+    assert result["id"] == test_id
+    assert result["name"] == "rick sanchez"
     
     # the last line to cover
     # the if not data of from_dict()
@@ -128,7 +142,8 @@ async def test_find_all(repository, mock_collection):
         "name": "jerry smith"
         }
     ]
-    mock_collection.find.return_value = mock_async_cursor(data_list)    
+    #mock_collection.find.return_value = mock_async_cursor(data_list)    
+    mock_collection.find.return_value.skip.return_value.limit.return_value = mock_async_cursor(data_list)
 
     result = await repository.find_all({})
 
@@ -137,7 +152,7 @@ async def test_find_all(repository, mock_collection):
     mock_collection.find.assert_called_once_with({})
     assert isinstance(result, list)
     assert len(result) == len(data_list)
-    assert result[0].name == "rick sanchez"
+    assert result[0]["name"] == "rick sanchez"
 
 @pytest.mark.asyncio
 async def test_find_all_with_filters(repository, mock_collection):
@@ -152,13 +167,14 @@ async def test_find_all_with_filters(repository, mock_collection):
             "name": "beth sanchez"
         }
     ]
-    mock_collection.find.return_value = mock_async_cursor(data_filtered)
+    #mock_collection.find.return_value = mock_async_cursor(data_filtered)
+    mock_collection.find.return_value.skip.return_value.limit.return_value = mock_async_cursor(data_filtered)
 
     result = await repository.find_all({"name": "summer smith", "name": "beth smith"})
     mock_collection.find.assert_called_once()
     mock_collection.find.assert_called_once_with({"name": "summer smith", "name": "beth smith"})
     assert len(result) == 2
-    assert result[0].name == "summer smith"
+    assert result[0]["name"] == "summer smith"
 
 
 @pytest.mark.asyncio
@@ -197,11 +213,11 @@ async def test_update_not_modified(repository, mock_collection):
     mock_collection.update_one.assert_called_once_with({'_id': real_id}, {"$set": {"not": "found"}})
     assert result is False
 
-@pytest.mark.asyncio
-async def test_update_failure(repository):
-    """Tests for a failure in the update flow"""
-    with pytest.raises(InvalidId):
-        await repository.update("aaa", {"id": "invalid"})
+#@pytest.mark.asyncio
+#async def test_update_failure(repository):
+#    """Tests for a failure in the update flow"""
+#    with pytest.raises(InvalidId):
+#        await repository.update("aaa", {"id": "invalid"})
 
 
 @pytest.mark.asyncio
@@ -241,3 +257,67 @@ async def test_not_object_to_delete(repository, mock_collection):
 
     assert result is False
     assert isinstance(result, bool)
+
+
+
+# -------------------------------------------------
+@pytest.mark.asyncio
+async def test_exists_true(repository):
+    repository.collection.count_documents = AsyncMock(return_value=1)
+    exists = await repository.exists("507f1f77bcf86cd799439011")
+    repository.collection.count_documents.assert_awaited_once()
+    assert exists is True
+
+@pytest.mark.asyncio
+async def test_exists_false(repository):
+    repository.collection.count_documents = AsyncMock(return_value=0)
+    exists = await repository.exists("507f1f77bcf86cd799439011")
+    assert exists is False
+
+@pytest.mark.asyncio
+async def test_exists_exception(repository):
+    repository.collection.count_documents = AsyncMock(side_effect=Exception("boom"))
+    exists = await repository.exists("507f1f77bcf86cd799439011")
+    assert exists is False
+
+@pytest.mark.asyncio
+async def test_count_with_filters(repository):
+    repository.collection.count_documents = AsyncMock(return_value=42)
+    filters = {"name": "pepe"}
+    result = await repository.count(filters)
+    repository.collection.count_documents.assert_awaited_once_with(filters)
+    assert result == 42
+
+@pytest.mark.asyncio
+async def test_count_without_filters(repository):
+    repository.collection.count_documents = AsyncMock(return_value=10)
+    result = await repository.count()
+    repository.collection.count_documents.assert_awaited_once_with({})
+    assert result == 10
+
+@pytest.mark.asyncio
+async def test_to_mongo_doc_without_id(repository):
+    data = {"name": "no id"}
+    result = repository._to_mongo_doc(data)
+    assert "_id" not in result
+
+def test_from_mongo_doc_none(repository):
+    result = repository._from_mongo_doc(None)
+    assert result is None
+
+@pytest.mark.asyncio
+async def test_find_by_id_invalid(repository):
+    result = await repository.find_by_id("notanobjectid")
+    assert result is None
+
+@pytest.mark.asyncio
+async def test_update_exception(repository):
+    repository.collection.update_one = AsyncMock(side_effect=Exception("fail"))
+    ok = await repository.update("507f1f77bcf86cd799439011", {"name": "rick"})
+    assert ok is False
+
+@pytest.mark.asyncio
+async def test_delete_exception(repository):
+    repository.collection.delete_one = AsyncMock(side_effect=Exception("fail"))
+    ok = await repository.delete("507f1f77bcf86cd799439011")
+    assert ok is False

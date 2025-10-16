@@ -17,6 +17,7 @@ class BaseSettingsClass(BaseSettings):
     port: int = 8000
     workers: int = 2
     log_level: str = "info"
+    log_dir: str = "/app/logs"
 
     # MongoDB
     mongodb_url: str

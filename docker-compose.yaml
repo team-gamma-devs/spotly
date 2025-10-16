@@ -1,6 +1,7 @@
 services:
   mongo:
     image: mongo:latest
+
     container_name: mongo
     restart: unless-stopped
     environment:
@@ -44,6 +45,8 @@ services:
       - WORKERS=2
       - LOG_LEVEL=${LOG_LEVEL:-warning}
       - MONGODB_URL=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017
+    volumes:
+      - ./logs:/app/logs
     depends_on:
       mongo:
         condition: service_healthy

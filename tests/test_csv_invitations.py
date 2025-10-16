@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 from io import StringIO, BytesIO
 
 from app.services.csv_invitation.csv_invitation import CSVInvitationProcessor
@@ -9,11 +9,11 @@ from app.services.csv_invitation.exceptions import InvalidCSVException, MissingC
 
 @pytest.fixture
 def processor():
-    #mock_invitation_repo = MagicMock()
+    mock_invitation_repo = MagicMock()
     mock_email_service = MagicMock()
 
     return CSVInvitationProcessor(
-        #invitation_repo=mock_invitation_repo,
+        invitation_repo=mock_invitation_repo,
         email_service=mock_email_service
     )
 
@@ -33,8 +33,8 @@ def invalid_csv_content():
         "jon,snow,Snow@example.com"
     )
 
-def create_mock_file(content: str) -> BytesIO:
-    return BytesIO(content.encode("utf-8"))
+def create_mock_file(content: str):
+    return content.encode("utf-8")
 
 
 def test_validate_csv(processor, valid_csv_content, invalid_csv_content):
@@ -61,7 +61,7 @@ def test_validate_csv(processor, valid_csv_content, invalid_csv_content):
         processor._validate_csv(invalid_archivo)
     
     # --- FAILURE InvalidCSV TEST --
-    invalid_csv = BytesIO(b'\xf0')
+    invalid_csv = bytes(b'\xf0')
     with pytest.raises(InvalidCSVException):
         processor._validate_csv(invalid_csv)
 
@@ -127,7 +127,7 @@ def test_send_invitations(processor, mock_invitations_list):
     times it calls send_email and verifying the parameters it uses for the calls.
     """
 
-    processor._send_invitations(mock_invitations_list)
+    processor.send_invitations(mock_invitations_list)
 
     # mock the service to see how many times it was called
     mock_email_service = processor.email_service
@@ -202,10 +202,51 @@ def test_send_invitations(processor, mock_invitations_list):
     #    normalized
     #)
 
+    
+    # se agrego la excepcion de send_invitation
+    mock_email_service = processor.email_service
+    mock_email_service.send_email.side_effect = Exception("email failed")
+    with patch("app.services.csv_invitation.csv_invitation.logger") as mock_logger:
+        processor.send_invitations(mock_invitations_list)
+        assert mock_logger.error.call_count == len(mock_invitations_list)
+
+# se agrego _save invitation camino exitoso y camino de fallo
+@pytest.mark.asyncio
+async def test_save_invitations_handles_exceptions(processor):
+    mock_invitation_1 = MagicMock()
+    mock_invitation_1.to_dict.return_value = {"email": "john@example.com"}
+    mock_invitation_1.email = "john@example.com"
+
+    mock_invitation_2 = MagicMock()
+    mock_invitation_2.email = "rick@example.com"
+    mock_invitation_2.to_dict.return_value = {"email": "rick@example.com"}
+
+    invitations = [mock_invitation_1, mock_invitation_2]
+
+    processor.invitation_repo.create = AsyncMock()
+
+    with patch("app.services.csv_invitation.csv_invitation.logger") as mock_logger:
+        await processor._save_invitations(invitations)
+
+        # --- Verifications ---
+        assert processor.invitation_repo.create.call_count == 2
+        mock_logger.info.assert_any_call("Invitation saved successfully for john@example.com")
+        mock_logger.info.assert_any_call("Invitation saved successfully for rick@example.com")
+
+    mock_invitation_failure = MagicMock()
+    mock_invitation_failure.email = "error@example.com"
+    mock_invitation_failure.to_dict.side_effect = Exception("dict failed")
+
+    processor.invitation_repo.create.side_effect = Exception("DB error")
+
+    with patch("app.services.csv_invitation.csv_invitation.logger") as mock_logger:
+        await processor._save_invitations([mock_invitation_failure])
+        mock_logger.error.assert_called_once()
 # ---------------------------------------------------------------------------- #
 
+@pytest.mark.asyncio
 @patch("app.services.csv_invitation.csv_invitation.Invitation")
-def test_process_csv(MockInvitation, processor, valid_csv_content):
+async def test_process_csv(MockInvitation, processor, valid_csv_content):
     """
     with this integration test we cover all flow that make the data.
     from the upload of the file until the sended of the invitations
@@ -216,9 +257,12 @@ def test_process_csv(MockInvitation, processor, valid_csv_content):
     MockInvitation.side_effect = [mock_invitation_1, mock_invitation_2]
 
     mock_file = create_mock_file(valid_csv_content)
-    mock_service_email = processor.email_service
+    processor.invitation_repo.create = AsyncMock()
+    processor.email_service.send_email = AsyncMock()
+    #mock_service_email = processor.email_service
 
-    processor.process_csv(mock_file)
+    invitations = await processor.process_csv(mock_file)
+    processor.send_invitations(invitations)
 
     assert MockInvitation.call_count == 2
     MockInvitation.assert_any_call(
@@ -227,6 +271,7 @@ def test_process_csv(MockInvitation, processor, valid_csv_content):
         cohort=102
     )
 
-    assert mock_service_email.send_email.call_count == 2
+    assert processor.invitation_repo.create.call_count == 2 
+    assert processor.email_service.send_email.call_count == 2
 
 
