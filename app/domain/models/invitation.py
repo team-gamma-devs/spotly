@@ -1,4 +1,3 @@
-from uuid import uuid4
 import secrets
 from datetime import datetime, timezone, timedelta
 from app.domain.models.bmodel import BModel

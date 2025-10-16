@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import datetime
 from email_validator import validate_email, EmailNotValidError
-from uuid import uuid4, UUID
 
 
 class BModel(ABC):
