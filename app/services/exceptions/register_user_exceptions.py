@@ -1,6 +1,10 @@
-class InvitationNotFound(Exception):
+class InvalidFileType(Exception):
     pass
 
 
-class InvitationExpired(Exception):
+class FileTooLarge(Exception):
+    pass
+
+
+class InvalidCV(Exception):
     pass
