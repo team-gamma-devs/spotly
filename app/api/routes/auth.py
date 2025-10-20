@@ -5,12 +5,14 @@ from fastapi import (
     Depends,
 )
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from datetime import datetime
 
 from app.api.schemas.auth_schemas import LoginRequest, LoginResponse, UserResponse
 from app.services.use_cases.user_login import UserLogin
 from app.services.use_cases.get_user import GetUser
-from app.services.exceptions.user_login_exceptions import UserNotRegistered
+from app.services.exceptions.user_login_exceptions import (
+    InvitationExpired,
+    InvitationNotFound,
+)
 
 
 router = APIRouter(
@@ -33,14 +35,17 @@ async def login(payload: LoginRequest):
 
     try:
         login_data = await user_login.login(email)
-    except UserNotRegistered as e:
+    except InvitationNotFound as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    except InvitationExpired as e:
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail=str(e))
 
     return {
         "message": "Logged Successfully",
         "access_token": login_data["token"],
         "token_type": "bearer",
         "role": login_data["role"],
+        "is_first_time": login_data["is_first_time"],
     }
 
 
