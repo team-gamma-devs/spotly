@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from email_validator import validate_email, EmailNotValidError
+from bson import ObjectId
+from bson.errors import InvalidId
+import validators
 
 
 class BModel(ABC):
@@ -10,8 +13,7 @@ class BModel(ABC):
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ):
-        if id:
-            self.__id = id
+        self.__id = id
         self.__created_at = created_at or datetime.now()
         self.updated_at = updated_at or datetime.now()
 
@@ -58,4 +60,25 @@ class BModel(ABC):
             raise TypeError(f"{field_name} must be a number")
         if value <= 0:
             raise ValueError(f"{field_name} must be positive")
+        return value
+
+    @staticmethod
+    def validate_id(value: str, field_name: str) -> str:
+        try:
+            ObjectId(value)
+            return value
+        except (InvalidId, TypeError):
+            raise Exception(f"{field_name} is not a valid ID")
+
+    @staticmethod
+    def validate_url(value: str, field_name: str) -> str:
+        value = value.strip()
+        if not validators.url(value):
+            raise Exception(f"{field_name} is not a valid URL")
+        return value
+
+    @staticmethod
+    def validate_bool(value: bool, field_name: str) -> bool:
+        if not isinstance(value, bool):
+            raise Exception(f"{field_name} must be a boolean")
         return value
