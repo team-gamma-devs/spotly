@@ -8,6 +8,7 @@ from app.services.exceptions.csv_invitation_exceptions import (
     MissingColumnsException,
 )
 from app.infrastructure.email import resend_email_service
+from app.domain.ports.email_service_port import IEmailService
 from app.infrastructure.database.repositories.invitation_repository import (
     InvitationRepository,
 )
@@ -33,7 +34,9 @@ class CSVInvitationProcessor:
 
     REQUIRED_COLUMNS = ["first_name", "last_name", "cohort", "email"]
 
-    def __init__(self, email_service=resend_email_service, invitation_repo=None):
+    def __init__(
+        self, email_service: IEmailService = resend_email_service, invitation_repo=None
+    ):
         """
         Initializes the CSVInvitationProcessor with optional email service and invitation repository.
 
@@ -191,7 +194,7 @@ class CSVInvitationProcessor:
                 font-family: Arial, sans-serif;
             ">
                 <h2>Hello! {invitation.full_name}</h2>
-                <h4>To log in and start using Spotly please use this link: <span style="color: red">http://spotly.work/sign-up/invite?token={invitation.token}</span></h4>
+                <h4>To log in and start using Spotly please use this link: <span style="color: red">http://spotly.work/</span></h4>
             </section>
             
             <section id="footer" style="
