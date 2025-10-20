@@ -9,7 +9,7 @@ class BaseSettingsClass(BaseSettings):
 
     # App
     app_name: str = "Spotly API"
-    app_env: Literal["development", "production", "staging"] = "production"
+    app_env: Literal["development", "production", "staging"] = "development"
     debug: bool = False
 
     # Server
@@ -31,10 +31,15 @@ class BaseSettingsClass(BaseSettings):
     # Gemini
     gemini_api_key: str
 
+    # File size limits
+    max_pdf_size: int
+    max_csv_size: int
+    max_img_size: int
+
     # Security
     secret_key: str
     frontend_secret: str
-    algorithm: str = "HS256"
+    algorithm: str
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
     allowed_hosts: list[str] = [
@@ -70,7 +75,7 @@ class BaseSettingsClass(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
-        extra = "ignore"  # Ignore extra variables in .env
+        extra = "ignore"
 
 
 class DevelopmentSettings(BaseSettingsClass):
@@ -140,7 +145,7 @@ def get_settings() -> BaseSettingsClass:
     return settings_class()
 
 
-# Global instance (created only once thanks to internal lru_cache)
+# Global instance
 @lru_cache()
 def get_cached_settings() -> BaseSettingsClass:
     """
