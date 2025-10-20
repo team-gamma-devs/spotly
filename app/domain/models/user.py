@@ -14,10 +14,10 @@ class User(BModel):
         email: str,
         avatar_url: str,
         id: str | None = None,
-        cohort: Optional[int] = None,
-        github_info: Optional[str] = None,
-        cv_info: Optional[str] = None,
-        tutors_feedback: Optional[List[str]] = None,
+        cohort: int | None = None,
+        github_info: str | None = None,
+        cv_info: str | None = None,
+        tutors_feedback: List[str] | None = None,
         role: str = "graduate",
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
@@ -26,18 +26,13 @@ class User(BModel):
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
-        if cohort:
-            self.cohort = cohort
+        self.cohort = cohort
         self.avatar_url = avatar_url
-        if github_info:
-            self.__github_info = BModel.validate_uuid(github_info, "github_info")
-        if cv_info:
-            self.__cv_info = BModel.validate_uuid(cv_info, "cv_info")
-        if tutors_feedback:
-            self.__tutors_feedback = [
-                BModel.validate_uuid(feedback, "tutors_feedback")
-                for feedback in tutors_feedback
-            ]
+        self.__github_info = (
+            BModel.validate_id(github_info, "github_info") if github_info else None
+        )
+        self.__cv_info = BModel.validate_id(cv_info, "cv_info") if cv_info else None
+        self.__tutors_feedback = tutors_feedback
         self.__role = role
 
     @property
@@ -94,14 +89,10 @@ class User(BModel):
 
     @avatar_url.setter
     def avatar_url(self, value: str):
-        value = value.strip()
-        if not validators.url(value):
-            raise ValueError(f"avatar_url is not a valid URL")
-        self.__avatar_url = value
+        self.__avatar_url = BModel.validate_url(value, "avatar_url")
 
     def to_dict(self) -> dict:
         data = {
-            "id": self.id,
             "first_name": self.first_name,
             "last_name": self.last_name,
             "email": self.email,
@@ -111,15 +102,15 @@ class User(BModel):
             "updated_at": self.updated_at,
         }
 
-        if hasattr(self, f"_User__id"):
+        if self.id:
             data["id"] = self.id
-        if hasattr(self, f"_User__github_info"):
+        if self.github_info:
             data["github_info"] = self.github_info
-        if hasattr(self, "_User__cv_info"):
+        if self.cv_info:
             data["cv_info"] = self.cv_info
-        if hasattr(self, "_User__tutors_feedback"):
+        if self.tutors_feedback:
             data["tutors_feedback"] = self.tutors_feedback
-        if hasattr(self, "_User__cohort"):
+        if self.cohort:
             data["cohort"] = self.cohort
 
         return data
