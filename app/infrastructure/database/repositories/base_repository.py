@@ -3,10 +3,12 @@ from motor.motor_asyncio import AsyncIOMotorCollection
 from bson import ObjectId
 import logging
 
+from app.domain.ports.repository_port import IBaseRepository
+
 logger = logging.getLogger(__name__)
 
 
-class BaseRepository:
+class BaseRepository(IBaseRepository):
     def __init__(self, collection: AsyncIOMotorCollection):
         self.collection = collection
 
