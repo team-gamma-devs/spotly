@@ -6,6 +6,7 @@ from typing import Dict, Any
 
 
 from app.settings import settings
+from app.services.prompts.prompts import SYSTEM_PROMPT, USER_PROMPT
 from app.services.schemas.cv_info_schema import CVInfoSchema
 from app.domain.ports.ia_service_port import IAService
 from app.infrastructure.ai import ai_service
@@ -22,8 +23,8 @@ class CVProcessor:
     def __init__(
         self,
         ia_service: IAService = ai_service,
-        system_prompt: str = "",
-        user_prompt: str = "",
+        system_prompt: str = SYSTEM_PROMPT,
+        user_prompt: str = USER_PROMPT,
     ):
         self.ia_service = ia_service
         self.system_prompt = system_prompt
@@ -44,7 +45,7 @@ class CVProcessor:
                 personal_cv_text, CVInfoSchema, self.system_prompt, self.user_prompt
             )
         else:
-            personal_cv_parsed = self._parse_pdf_file(personal_cv)
+            personal_cv_parsed = await self._parse_pdf_file(personal_cv)
 
         linkedin_cv_parsed = None
         if linkedin_cv_text:
@@ -57,7 +58,7 @@ class CVProcessor:
         result = {
             "first_name": personal_cv_parsed.first_name,
             "last_name": personal_cv_parsed.last_name,
-            "skills": personal_cv_parsed.skills,
+            "skills": list(set(personal_cv_parsed.skills + linkedin_cv_parsed.skills)),
             "english_level": personal_cv_parsed.english_level,
             "works_in_it": personal_cv_parsed.works_in_it,
         }
