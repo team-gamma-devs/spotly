@@ -23,7 +23,7 @@ async def sign_up(
     github_username: Optional[str] = Form(None),
     personal_cv: UploadFile = File(...),
     linkedin_cv: UploadFile = File(...),
-    avatar_img: Optional[UploadFile] = File(None),
+    avatar_img: UploadFile = File(...),
 ):
 
     if avatar_img and not avatar_img.content_type.startswith("image/"):
@@ -34,7 +34,9 @@ async def sign_up(
 
     register_user = RegisterUser()
     try:
-        registered_user = await register_user.register_user(personal_cv, linkedin_cv)
+        registered_user = await register_user.register_user(
+            personal_cv, linkedin_cv, avatar_img
+        )
     except FileTooLarge as e:
         logger.warning(f"Error: {e}")
         raise HTTPException(
@@ -50,9 +52,5 @@ async def sign_up(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)
         )
-    except Exception as e:
-        logger.warning(f"Error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+
     return registered_user
