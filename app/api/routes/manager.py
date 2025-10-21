@@ -8,8 +8,8 @@ from app.services.exceptions.csv_invitation_exceptions import (
 )
 
 router = APIRouter(
-    prefix="/admin",
-    tags=["admin"],
+    prefix="/manager",
+    tags=["manager"],
 )
 
 
@@ -50,5 +50,4 @@ async def upload_csv(background_tasks: BackgroundTasks, file: UploadFile = File(
 @router.get("/filters", status_code=status.HTTP_200_OK)
 async def get_filters():
     filters = GetFilters()
-    return {"filters": filters}
-    pass
+    return {"filters": filters.get_available_filters()}
