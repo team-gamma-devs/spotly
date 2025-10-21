@@ -35,11 +35,17 @@ class AIService:
         """
         self.api_key = api_key
         self.provider = provider or GoogleProvider(api_key=self.api_key)
-        self.model = model or GoogleModel("gemini-2.0-flash", provider=self.provider)
+        self.model = model or GoogleModel(
+            "gemini-2.0-flash", provider=self.provider
+        )
         self.attempts = attempts
 
     async def parse_text_with_schema(
-        self, text: str, schema: type[BaseModel], system_prompt: str, user_prompt: str
+        self,
+        text: str,
+        schema: type[BaseModel],
+        system_prompt: str,
+        user_prompt: str,
     ) -> dict:
         if not text or not text.strip():
             raise ValueError("No text provided for parsing")
@@ -96,7 +102,9 @@ class AIService:
 
                 # Other errrors
                 if attempt == 0:
-                    logger.warning(f"Error on attempt {attempt + 1}: {e}, retrying...")
+                    logger.warning(
+                        f"Error on attempt {attempt + 1}: {e}, retrying..."
+                    )
                     await asyncio.sleep(1)
                     continue
 
@@ -121,7 +129,9 @@ class AIService:
                 result = await agent.run(
                     [
                         user_prompt,
-                        BinaryContent(data=pdf_bytes, media_type="application/pdf"),
+                        BinaryContent(
+                            data=pdf_bytes, media_type="application/pdf"
+                        ),
                     ]
                 )
                 return result.output
@@ -173,7 +183,9 @@ class AIService:
                     ) from e
 
                 if attempt == 0:
-                    logger.warning(f"Error on attempt {attempt + 1}: {e}, retrying...")
+                    logger.warning(
+                        f"Error on attempt {attempt + 1}: {e}, retrying..."
+                    )
                     await asyncio.sleep(1)
                     continue
 

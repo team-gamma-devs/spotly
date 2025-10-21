@@ -2,7 +2,9 @@ from fastapi import UploadFile
 from typing import Dict, Any
 
 from app.domain.models.cvinfo import CVInfo
-from app.infrastructure.database.repositories.cv_info_repository import CVInfoRepository
+from app.infrastructure.database.repositories.cv_info_repository import (
+    CVInfoRepository,
+)
 from app.infrastructure.database.repositories.filters_repository import (
     FiltersRepository,
 )
@@ -25,7 +27,7 @@ class CVInfoProcessor:
         cv_file_url = await self._upload_cv(cv_file)
         cv_data = {
             "graduated_id": user_id,
-            "personal_cv_url": cv_file_url,
+            "personal_cv_url": "https://placeholder.com",
             "skills": cv_info["skills"],
             "english_level": cv_info["english_level"],
             "works_in_it": cv_info["works_in_it"],
