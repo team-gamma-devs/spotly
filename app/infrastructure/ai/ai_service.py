@@ -6,20 +6,9 @@ from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google import GoogleProvider
 
 from app.settings import settings
+from app.infrastructure.ai.exceptions import ParsingError, ServiceLimitError
 
 logger = logging.getLogger(__name__)
-
-
-class ParsingError(Exception):
-    """Error al parsear el contenido"""
-
-    pass
-
-
-class ServiceLimitError(Exception):
-    """Error de límite o interno del servicio"""
-
-    pass
 
 
 class AIService:
