@@ -1,6 +1,7 @@
 import csv
 from typing import List
 import logging
+from datetime import datetime
 
 from app.domain.models.invitation import Invitation
 from app.services.exceptions.csv_invitation_exceptions import (
@@ -35,7 +36,9 @@ class CSVInvitationProcessor:
     REQUIRED_COLUMNS = ["first_name", "last_name", "cohort", "email"]
 
     def __init__(
-        self, email_service: IEmailService = resend_email_service, invitation_repo=None
+        self,
+        email_service: IEmailService = resend_email_service,
+        invitation_repo=None,
     ):
         """
         Initializes the CSVInvitationProcessor with optional email service and invitation repository.
@@ -91,7 +94,11 @@ class CSVInvitationProcessor:
         if not reader.fieldnames:
             raise InvalidCSVException("CSV is empty or missing header")
 
-        missing = [col for col in self.REQUIRED_COLUMNS if col not in reader.fieldnames]
+        missing = [
+            col
+            for col in self.REQUIRED_COLUMNS
+            if col not in reader.fieldnames
+        ]
         if missing:
             raise MissingColumnsException(missing)
 
@@ -117,7 +124,9 @@ class CSVInvitationProcessor:
                 )
                 invitations.append(invitation)
             except Exception as e:
-                logger.warning(f"Error creating invitation of {graduated}: {e}")
+                logger.warning(
+                    f"Error creating invitation of {graduated}: {e}"
+                )
         return invitations
 
     async def _save_invitations(self, invitations: List[Invitation]):
@@ -130,8 +139,25 @@ class CSVInvitationProcessor:
         """
         for invitation in invitations:
             try:
+                already_invited = await self.invitation_repo.find_by_email(
+                    invitation.email
+                )
+                if already_invited:
+                    already_invited = Invitation(**already_invited)
+                    if already_invited.expires_at > datetime.now():
+                        logger.info(
+                            f"{invitation.full_name} already invited with email {invitation.email}"
+                        )
+                        continue
+                    else:
+                        await self.invitation_repo.delete(already_invited.id)
+                        logger.info(
+                            f"Expired invitation for {invitation.email} replaced."
+                        )
                 await self.invitation_repo.create(invitation.to_dict())
-                logger.info(f"Invitation saved successfully for {invitation.email}")
+                logger.info(
+                    f"Invitation saved successfully for {invitation.email}"
+                )
             except Exception as e:
                 logger.error(
                     f"Failed to save invitation for {invitation.email}: {str(e)}",
@@ -154,7 +180,9 @@ class CSVInvitationProcessor:
                     "Spotly app invitation from Holberton",
                     body,
                 )
-                logger.info(f"Invitation email sent successfully to {invitation.email}")
+                logger.info(
+                    f"Invitation email sent successfully to {invitation.email}"
+                )
             except Exception as e:
                 logger.error(
                     f"Failed to send email to {invitation.email}: {str(e)}",
