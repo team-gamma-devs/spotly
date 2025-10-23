@@ -1,9 +1,9 @@
 from datetime import datetime
 import re
-import validators
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 from app.domain.models.bmodel import BModel
+from app.domain.models.cvinfo import CVInfo
 
 
 class User(BModel):
@@ -13,14 +13,14 @@ class User(BModel):
         last_name: str,
         email: str,
         avatar_url: str,
-        id: str | None = None,
-        cohort: int | None = None,
-        github_info: str | None = None,
-        cv_info: str | None = None,
-        tutors_feedback: List[str] | None = None,
+        id: Optional[str] = None,
+        cohort: Optional[int] = None,
+        github_info: Optional[str] = None,
+        cv_info: Optional[CVInfo] = None,
+        tutors_feedback: List[str] = None,
         role: str = "graduate",
-        created_at: datetime | None = None,
-        updated_at: datetime | None = None,
+        created_at: Optional[datetime] = None,
+        updated_at: Optional[datetime] = None,
     ):
         super().__init__(id, created_at, updated_at)
         self.first_name = first_name
@@ -28,11 +28,9 @@ class User(BModel):
         self.email = email
         self.cohort = cohort
         self.avatar_url = avatar_url
-        self.__github_info = (
-            BModel.validate_id(github_info, "github_info") if github_info else None
-        )
-        self.__cv_info = BModel.validate_id(cv_info, "cv_info") if cv_info else None
-        self.__tutors_feedback = tutors_feedback
+        self.github_info = github_info
+        self.cv_info = cv_info
+        self._tutors_feedback = tutors_feedback
         self.__role = role
 
     @property
@@ -90,6 +88,14 @@ class User(BModel):
     @avatar_url.setter
     def avatar_url(self, value: str):
         self.__avatar_url = BModel.validate_url(value, "avatar_url")
+
+    @cv_info.setter
+    def cv_info(self, value: CVInfo):
+        if not isinstance(value, CVInfo):
+            raise Exception("cv_info must be a instantiated class of CVInfo")
+
+    def tutors_feedback_add(self, feedback: Dict[str, Any]):
+        pass
 
     def to_dict(self) -> dict:
         data = {
