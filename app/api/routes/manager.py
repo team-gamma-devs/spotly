@@ -1,7 +1,18 @@
+# Dependencies
 from fastapi import APIRouter, File, UploadFile, HTTPException, BackgroundTasks, status
 
+# General Config
 from app.settings import settings
+
+# Use Cases
 from app.services.use_cases.csv_invitation import CSVInvitationProcessor
+from app.services.use_cases.get_filters import GetFilters
+from app.services.use_cases.graduates_filter import GraduatesFilter
+
+# Schemas
+from app.api.schemas.manager_schemas import FiltersListResponse, FiltersPayload
+
+# Personalized Exceptions
 from app.services.exceptions.csv_invitation_exceptions import (
     InvalidCSVException,
     MissingColumnsException,
@@ -47,7 +58,27 @@ async def upload_csv(background_tasks: BackgroundTasks, file: UploadFile = File(
     return {"message": "Invitations generated successfully"}
 
 
-@router.get("/filters", status_code=status.HTTP_200_OK)
+@router.post("/invitations", status_code=status.HTTP_200_OK)
+async def filter_invitations():
+
+    pass
+
+
+@router.get(
+    "/filters", response_model=FiltersListResponse, status_code=status.HTTP_200_OK
+)
 async def get_filters():
     filters = GetFilters()
-    return {"filters": filters.get_available_filters()}
+    return {"filters": await filters.get_available_filters()}
+
+
+@router.post("/search_graduates", status_code=status.HTTP_200_OK)
+async def search_graduates(filters: FiltersPayload):
+    filters_processor = GraduatesFilter()
+    result = await filters_processor.process_filters(filters)
+    return result
+
+
+@router.post("/feedback", status_code=status.HTTP_201_CREATED)
+async def tutors_feedback():
+    pass
