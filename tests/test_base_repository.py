@@ -66,7 +66,7 @@ async def mock_async_cursor(data):
 # Conversion test
 def test_to_dict(repository):
     """Verifies the Mongo model-to-document conversion."""
-    test_id = "507f1f77bcf86cd799439011"
+    test_id = RealObjectId("507f1f77bcf86cd799439011")
     #entity = TestModel(id=test_id, name="Test Name")
     data_dict = {"id": test_id, "name": "Test Name"}
 
