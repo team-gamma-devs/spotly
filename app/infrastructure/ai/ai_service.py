@@ -46,7 +46,7 @@ class AIService:
         schema: type[BaseModel],
         system_prompt: str,
         user_prompt: str,
-    ) -> dict:
+    ):
         if not text or not text.strip():
             raise ValueError("No text provided for parsing")
 
@@ -117,7 +117,7 @@ class AIService:
         schema: type[BaseModel],
         system_prompt: str,
         user_prompt: str,
-    ) -> dict:
+    ):
         if not pdf_bytes:
             raise ValueError("No file provided for parsing")
 
