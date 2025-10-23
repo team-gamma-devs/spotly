@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import datetime
 from email_validator import validate_email, EmailNotValidError
-from uuid import uuid4, UUID
+from bson import ObjectId
+from bson.errors import InvalidId
+import validators
 
 
 class BModel(ABC):
@@ -11,7 +13,7 @@ class BModel(ABC):
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ):
-        self.__id = id or str(uuid4())
+        self.__id = id
         self.__created_at = created_at or datetime.now()
         self.updated_at = updated_at or datetime.now()
 
@@ -61,9 +63,22 @@ class BModel(ABC):
         return value
 
     @staticmethod
-    def validate_uuid(value: str, field_name: str) -> str:
+    def validate_id(value: str, field_name: str) -> str:
         try:
-            uuid_obj = UUID(value, version=4)
-            return str(uuid_obj)
-        except (ValueError, AttributeError, TypeError):
-            raise ValueError(f"Invalid UUID in {field_name}")
+            ObjectId(value)
+            return value
+        except (InvalidId, TypeError):
+            raise Exception(f"{field_name} is not a valid ID")
+
+    @staticmethod
+    def validate_url(value: str, field_name: str) -> str:
+        value = value.strip()
+        if not validators.url(value):
+            raise Exception(f"{field_name} is not a valid URL")
+        return value
+
+    @staticmethod
+    def validate_bool(value: bool, field_name: str) -> bool:
+        if not isinstance(value, bool):
+            raise Exception(f"{field_name} must be a boolean")
+        return value

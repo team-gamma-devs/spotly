@@ -1,9 +1,6 @@
 import resend
-from typing import Protocol
 
-
-class IEmailService(Protocol):
-    def send_email(self, to: str, subject: str, body: str) -> None: ...
+from app.domain.ports.email_service_port import IEmailService
 
 
 class ResendEmailService(IEmailService):

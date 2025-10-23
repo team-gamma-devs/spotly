@@ -1,3 +1,7 @@
+class UserNotRegistered(Exception):
+    pass
+
+
 class InvitationNotFound(Exception):
     pass
 

@@ -3,7 +3,7 @@ import re
 import validators
 from typing import Optional, List
 
-from app.domain.bmodel import BModel
+from app.domain.models.bmodel import BModel
 
 
 class User(BModel):
@@ -14,11 +14,11 @@ class User(BModel):
         email: str,
         avatar_url: str,
         id: str | None = None,
-        cohort: Optional[int] = None,
-        github_info: Optional[str] = None,
-        cv_info: Optional[str] = None,
-        tutors_feedback: Optional[List[str]] = None,
-        is_admin: bool = False,
+        cohort: int | None = None,
+        github_info: str | None = None,
+        cv_info: str | None = None,
+        tutors_feedback: List[str] | None = None,
+        role: str = "graduate",
         created_at: datetime | None = None,
         updated_at: datetime | None = None,
     ):
@@ -26,19 +26,14 @@ class User(BModel):
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
-        if cohort:
-            self.cohort = cohort
+        self.cohort = cohort
         self.avatar_url = avatar_url
-        if github_info:
-            self.__github_info = BModel.validate_uuid(github_info, "github_info")
-        if cv_info:
-            self.__cv_info = BModel.validate_uuid(cv_info, "cv_info")
-        if tutors_feedback:
-            self.__tutors_feedback = [
-                BModel.validate_uuid(feedback, "tutors_feedback")
-                for feedback in tutors_feedback
-            ]
-        self.__is_admin = is_admin
+        self.__github_info = (
+            BModel.validate_id(github_info, "github_info") if github_info else None
+        )
+        self.__cv_info = BModel.validate_id(cv_info, "cv_info") if cv_info else None
+        self.__tutors_feedback = tutors_feedback
+        self.__role = role
 
     @property
     def first_name(self):
@@ -73,8 +68,8 @@ class User(BModel):
         return self.__tutors_feedback
 
     @property
-    def is_admin(self):
-        return self.__is_admin
+    def role(self):
+        return self.__role
 
     @first_name.setter
     def first_name(self, value: str):
@@ -94,28 +89,28 @@ class User(BModel):
 
     @avatar_url.setter
     def avatar_url(self, value: str):
-        value = value.strip()
-        if not validators.url(value):
-            raise ValueError(f"avatar_url is not a valid URL")
-        self.__avatar_url = value
+        self.__avatar_url = BModel.validate_url(value, "avatar_url")
 
     def to_dict(self) -> dict:
         data = {
-            "id": self.id,
             "first_name": self.first_name,
             "last_name": self.last_name,
             "email": self.email,
             "avatar_url": self.avatar_url,
-            "is_admin": self.is_admin,
+            "role": self.role,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
         }
 
-        if hasattr(self, f"_User__github_info"):
+        if self.id:
+            data["id"] = self.id
+        if self.github_info:
             data["github_info"] = self.github_info
-        if hasattr(self, "_User__cv_info"):
+        if self.cv_info:
             data["cv_info"] = self.cv_info
-        if hasattr(self, "_User__tutors_feedback"):
+        if self.tutors_feedback:
             data["tutors_feedback"] = self.tutors_feedback
-        if hasattr(self, "_User__cohort"):
+        if self.cohort:
             data["cohort"] = self.cohort
 
         return data
@@ -135,7 +130,6 @@ class User(BModel):
 
     def __repr__(self):
         return (
-            f"User(id={self.id!r}, "
             f"first_name={self.first_name!r}, last_name={self.last_name!r}, "
-            f"email={self.email!r}, is_admin={self.is_admin!r})"
+            f"email={self.email!r}, role={self.role!r})"
         )

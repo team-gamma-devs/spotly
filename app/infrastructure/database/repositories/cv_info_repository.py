@@ -5,7 +5,7 @@ from app.infrastructure.database.repositories.base_repository import BaseReposit
 from app.infrastructure.database import MongoDB
 
 
-class UserRepository(BaseRepository):
+class CVInfoRepository(BaseRepository):
     def __init__(self, db: Optional[AsyncIOMotorDatabase] = None):
         """
         Invitation repository for CRUD operations on the 'invitations' collection.
@@ -15,13 +15,9 @@ class UserRepository(BaseRepository):
                 Defaults to MongoDB.db singleton.
         """
         self.db = db or MongoDB.db
-        collection = self.db["users"]
+        collection = self.db["cvinfo"]
         super().__init__(collection)
 
-    async def find_by_email(self, email: str) -> Optional[Dict[str, Any]]:
-        """Find User by email."""
-        return await self.find_one({"email": email})
-
-    async def find_by_state(self, state: bool) -> List[Dict[str, Any]]:
-        """Find all invitations by state."""
-        return await self.find_all({"log_state": "False"})
+    async def find_by_user(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Find CVInfo by related user id."""
+        return await self.find_one({"user_id": user_id})

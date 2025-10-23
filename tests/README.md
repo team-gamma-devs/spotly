@@ -91,11 +91,11 @@ comando para tener mas informacion y data de cobertura `pytest --cov=.`
 
     -     test_bmodel_constructor_with_data_from_db, aca es donde probamos el
           constructor de Bmodel utilizando la simulacion para aislar la prueba,
-          se verifica que la data cohincide con lo declarado y que los atributos
+          se verifica que la data coincide con lo declarado y que los atributos
           de tiempo son del tipo datatime
 
     -     test_bmodel_updated_at_setter, verificamos el recorrido exitoso del setter,
-          luego de crear la instancia modificamos la data y vemos que cohincide.
+          luego de crear la instancia modificamos la data y vemos que coincide.
           (arreglar esta funcion, caso exitoso con str)
 
     -     test_validate_uuid, validamos el funcionamiento de dicha funcion, 
@@ -141,7 +141,9 @@ comando para tener mas informacion y data de cobertura `pytest --cov=.`
           hubo igualdad con los datos de nuestro csv(mock) en una de las llamadas.
           con el mock del servicio de email verificamos que fue llamado la misma cantidad de veces como
           instancias teniamos e igual a la cantidad de objetos en el csv, tambien verificamos que una
-          de las llamadas contiene los valores esperados segun nuestra data en el csv. ademas verificamos que el servicio de invitation_repo fue llamado dos veces
+          de las llamadas contiene los valores esperados segun nuestra data en el csv.
+          ademas verificamos que el servicio de invitation_repo fue llamado 
+          dos veces
 
 - **test_base_repository**
 >para ejecutar exitosamente este archivo de test es necesario instalar `pytest-asyncio`
@@ -149,10 +151,10 @@ comando para tener mas informacion y data de cobertura `pytest --cov=.`
 
     -     primero se valido la funcionalidad de to_dict() la cual se encarga de convertir la clave del id
           a la forma esperada por nuestra base de datos. se verifica que la clave _id contiene el id 
-          utilizado, que la clave id no esta en la respuesta (doc) y que el nombre cohincide
+          utilizado, que la clave id no esta en la respuesta (doc) y que el nombre coincide
 
     -     se valida la creacion de una entidad, se configuran los datos del objeto y la respuesta del metodo.
-          se verifica que el metodo fue llamado una vez y que la respuesta cohincide con el 
+          se verifica que el metodo fue llamado una vez y que la respuesta coincide con el 
           inserted_id esperado
 
     -     find_by_id, se configura el mock, la respuesta del metodo y se llama a este, verificamos que
@@ -163,10 +165,10 @@ comando para tener mas informacion y data de cobertura `pytest --cov=.`
           asynchronous iterator para generar una respuesta valida del metodo.
           se llama al metodo y se verifica que fue llamado una sola vez, que fue llamado con un diccionario 
           vacio, que la respuesta es una lista, que el largo de esa lista es de la misma cantidad de objetos
-          y que la data cohincide.
+          y que la data coincide.
 
     -     find_all_with_filters, mismos pasos que en el test anterior pero esta vez se llama al metodo
-          con un diccionario que contiene dos filtros, se verifica que fue llamado una vez, que fue llamado con x filtros, que el largo de la lista cohincide con los filtros y que la data cohincide
+          con un diccionario que contiene dos filtros, se verifica que fue llamado una vez, que fue llamado con x filtros, que el largo de la lista coincide con los filtros y que la data coincide
 
     -     update, se simula una id valida y se crea un objeto simulado que contiene el atributo a testiar,
           se simula la respuesta esperada y se llama al metodo.
@@ -197,4 +199,108 @@ comando para tener mas informacion y data de cobertura `pytest --cov=.`
           test cubrimos la funcion count con filtros y sin filtros, la cual 
           cuenta documentos. se verifica que la funcion hizo la llamada con
           los atributos esperados en el primer caso y verificando la
-          cohincidencia de documentos recibidos 
+          coincidencia de documentos recibidos 
+
+- **test_routes**
+>este archivo contiene test para validar el funcionamiento de cada archivo (por el momento) dentro de la carpeta routes. el archivo consta de varias secciones, primero contiene la configuracion inicial e imports necesarios, luego los moks y fixturs que se van a usar y por ultimo la seccion de test para admin, auth, health, singup
+
+    -     successful_csv_upload, verifica el camino exitoso al cargar el csv con
+          las personas a invitar, se valida la coincidencia del status code y
+          mensaje devuelvo, tambien se valida la correcta llamada a las
+          funciones process_csv y send_invitation
+
+    -     non_csv_file_upload, se valida el fallo al ingresar un archivo que
+          que no es de tipo csv, se verifica la coincidencia del status code
+          y el mensaje devuelto, tambien se verifica que la funcion
+          process_csv no fue llamada.
+
+    -     handles_invalid_csv_exception, se valida la exepcion por csv mal formado,
+          se comprueba la coincidencia del status code y el mensaje devueltos
+          y ademas se verifica que esta ves si fue llamada la funcion process_csv, encargada de lanzar la excepcion.
+
+    -     handles_missing_columns_exception, se valida la excepcion por falta
+          de columnas dentro del csv, se verifica la coincidencia del
+          status code y mensaje devueltos y tambien la correcta llamada a la
+          funcion process_csv, encargada de lanzar la excepcion.
+
+    -     login_success, valida el flujo exitoso del login, se verifica la
+          coincidencia del status code, la data dentro del json de la 
+          respuesta y tambien la correcta llamada a la funcion login con
+          cierto argumento.
+
+    -     login_user_not_registered, se valida la excepcion lanzada por login
+          cuando un usuario no esta registrado, se verifica la coincidencia en
+          el status code y el mensaje devuelto. ademas se verifica que la
+          funcion login fue llamada.
+
+    -     auth_me_success, se valida el flujo exitozo de autentificacion, se
+          verifica la coincidencia del status code, usando una funcion auxiliar para eliminar las claves created y update at se verifica
+          que la data devuelta coincide y se verifica la llamada a la
+          funcion verify con cierto argumento.
+
+    -     auth_me_unauthorized, se valida la excepcion de verify cuando el
+          token es invalido o esta expirado, se verifica la coincidencia del
+          status code y el mensaje devuelto, tambien la llamada a la funcion
+          verify con cierto argumento.
+
+    -     auth_me_missing_token, se valida el correcto fallo cuando no 
+          proporcionamos un token de autenticacion, se verifica la
+          coincidencia del status code y del mensaje devuelto
+
+    -     health_check_success, se valida la respuesta exitosa desde health,
+          se verifica la coincidencia del status code y la información de diagnóstico básica de la aplicación.
+
+    -     liveness_check_success, se valida la respuesta exitosa desde
+          health/live, se verifica la coincidencia del status code y el 
+          mensaje devuelto por el endpoint.
+
+    -     test_readiness_check_success, se valida la respuesta exitosa desde
+          health/ready, se verifica la coincidencia del status code, el mensaje devuelto y ademas que la base de datos fue llamada con 
+          el argumento ping
+
+    -     readiness_check_db_failure, inverso al test anterior aca se valida
+          la respuesta de health/ready cuando la base de datos falla, se 
+          verifica la coincidencia del status code, los nuevos valores en la
+          respuesta devuelta, que el mensaje de error coincide y que la 
+          base de datos fue llamada con el argumento ping
+
+    -     root_endpoint_debug_true, se valida que el endpoint root funciona 
+          correctamente en modo debug, se verifica la coincidencia del 
+          status code y la data dentro de los campos devueltos por el endpoint.
+
+    -     root_endpoint_debug_false, se valida que el endpoint root funciona
+          correctamente en modo produccion, se verifica la coincidencia 
+          del estatus code y la data dentro de los campos devueltos por
+          el endpoint.
+
+    -     test_check_invitation_success, se valida la respuesta exitosa de 
+          /sing-up/invite, se verifica la coincidencia del status code 
+          y la respuesta devuelta, ademas se verifica que la funcion 
+          check_invitation fue llamada con cierto argumento pasado como 
+          query param.
+
+    -     test_check_invitation_not_found, se valida el flujo donde el token
+          no fue encontrado, se verifica la coincidencia del status code, el
+          mensaje devuelto y que la funcion check_invitatin fue llamada con
+          cierto argumento
+
+    -     check_invitation_expired, se hace saltar la ultima excepcion posible
+          validando el flujo donde el token esta expirado, se verifica la 
+          coincidencia de status code, el mensaje devuelto y la llamada a la 
+          funcion check_invitation con cierto argumento
+
+    -     signup_successful_validation, se valida la respuesta exitosa de 
+          /sing-up/, se verifica que el status code devuelto por el endpoint
+          es efectivamente un 201 created 
+
+    -     signup_invalid_cv_type, se valida la respuesta cuando ingresamos un
+          CV que no es tipo PDF, se verifica la coincidencia del status code
+          y el mensaje de error devuelto
+
+    -     signup_invalid_linkedin_cv_type, se valida la respuesta cuando 
+          ingresamos un linkedin CV que no es tipo PDF, se verifica la 
+          coincidencia del status code y el mensaje de error devuelto
+
+    -     signup_invalid_avatar_type, se valida la correcta respuesta cuando
+          ingresamos una avatar que no es una imagen, se verifica la 
+          coincidencia del status code y el mensaje devuelto 

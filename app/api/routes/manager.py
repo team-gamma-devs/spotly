@@ -1,22 +1,34 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, BackgroundTasks, status
 
-from app.services.csv_invitation.csv_invitation import CSVInvitationProcessor
-from app.services.csv_invitation.exceptions import (
+from app.settings import settings
+from app.services.use_cases.csv_invitation import CSVInvitationProcessor
+from app.services.exceptions.csv_invitation_exceptions import (
     InvalidCSVException,
     MissingColumnsException,
 )
 
 router = APIRouter(
-    prefix="/admin",
-    tags=["admin"],
+    prefix="/manager",
+    tags=["manager"],
 )
 
 
 @router.post("/uploadCSV", status_code=status.HTTP_202_ACCEPTED)
 async def upload_csv(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+    MAX_CSV_SIZE_BYTES = settings.max_csv_size * 1024 * 1024
+
     if not file.filename.endswith(".csv"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="File must be CSV"
+        )
+
+    file.file.seek(0, 2)
+    size = file.file.tell()
+    file.file.seek(0)
+    if size > MAX_CSV_SIZE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail=f"{file.filename} exceeds {settings.max_csv_size:.1f}MB limit",
         )
 
     contents = await file.read()
@@ -33,3 +45,9 @@ async def upload_csv(background_tasks: BackgroundTasks, file: UploadFile = File(
         )
 
     return {"message": "Invitations generated successfully"}
+
+
+@router.get("/filters", status_code=status.HTTP_200_OK)
+async def get_filters():
+    filters = GetFilters()
+    return {"filters": filters.get_available_filters()}
