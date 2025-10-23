@@ -109,6 +109,8 @@ class ProductionSettings(BaseSettingsClass):
     cors_origins: list[str] = [
         "https://spotly.work",
         "https://www.spotly.work",
+        "https://www.api.spotly.work",
+        "https://api.spotly.work",
     ]
 
     # Stricter security
