@@ -9,6 +9,14 @@ logger = logging.getLogger(__name__)
 
 
 class BaseRepository(IBaseRepository):
+    """
+    Base repository providing common CRUD operations for a MongoDB collection.
+
+    This class wraps an AsyncIOMotorCollection and provides basic methods
+    for creating, reading, updating, deleting, and counting documents.
+    It also handles conversion between 'id' and MongoDB '_id'.
+    """
+
     def __init__(self, collection: AsyncIOMotorCollection):
         self.collection = collection
 
@@ -26,7 +34,6 @@ class BaseRepository(IBaseRepository):
         if not doc:
             return None
 
-        logger.debug(f"Document before parsing: {doc}")
         result = doc.copy()
         result["id"] = str(result.pop("_id"))
         return result
