@@ -15,8 +15,8 @@ class BModel(ABC):
         updated_at: Optional[datetime] = None,
     ):
         self.__id = id
-        self.__created_at = self.validate_datetime(created_at) or datetime.now()
-        self.updated_at = self.validate_datetime(updated_at) or datetime.now()
+        self.__created_at = created_at or datetime.now()
+        self.updated_at = updated_at or datetime.now()
 
     @property
     def id(self):
