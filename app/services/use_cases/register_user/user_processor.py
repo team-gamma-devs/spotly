@@ -4,7 +4,9 @@ import logging
 
 from app.domain.models.user import User
 from app.domain.models.cvinfo import CVInfo
-from app.infrastructure.database.repositories.user_repository import UserRepository
+from app.infrastructure.database.repositories.user_repository import (
+    UserRepository,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +38,7 @@ class UserProcessor:
             "email": email,
             "avatar_url": avatar_img_url,
             "cohort": cohort,
-            "cv_data": cv_info_data,
+            "cv_info": cv_info_data,
         }
 
         new_user = User(**user_data)
