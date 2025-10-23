@@ -29,8 +29,7 @@ class UserLogin:
 
     async def login(self, email: str) -> Dict[str, Any]:
         user = await self._verify_user(email)
-        is_first_time = False
-        data = {"is_first_time": is_first_time, "role": "graduated"}
+        data = {"is_first_time": False, "role": "graduated"}
         if not user:
             invitation = await self._verify_invitation(email)
             if not invitation:
@@ -38,6 +37,7 @@ class UserLogin:
                 raise InvitationNotFound(
                     "Your email is not associated with a registered user or any invitation. Please contact the Holberton staff."
                 )
+
             if not invitation.is_valid():
                 logger.warning(
                     f"User {email} was invited but the invitation has expired"
@@ -45,7 +45,8 @@ class UserLogin:
                 raise InvitationExpired(
                     "The provided email corresponds to an invited user, but the invitation has expired. Please contact the Holberton staff."
                 )
-            is_first_time = True
+
+            data["is_first_time"] = True
         else:
             data["token"] = self._generate_jwt(user)
             data["role"] = user.role
