@@ -2,7 +2,7 @@ from fastapi import UploadFile
 import logging
 import re
 import fitz
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 
 from app.settings import settings
@@ -82,7 +82,7 @@ class CVProcessor:
 
     def _extract_text(
         self, file: UploadFile, is_linkedin_cv: bool = False
-    ) -> str | None:
+    ) -> Optional[str]:
         try:
             contents = file.file.read()
             with fitz.open(stream=contents, filetype="pdf") as doc:
