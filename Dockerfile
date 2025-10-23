@@ -45,6 +45,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY --chown=appuser:appuser ./app ./app
 
+RUN mkdir -p /app/logs && chown -R appuser:appuser /app/logs
+
 USER appuser
 
 EXPOSE 8000

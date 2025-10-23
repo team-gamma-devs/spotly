@@ -20,16 +20,21 @@ services:
       retries: 3
       start_period: 40s
     command: >
-      --wiredTigerCacheSizeGB 0.25
+      --wiredTigerCacheSizeGB 1.0
       --quiet
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 400M
+          cpus: '1.0'
+          memory: 1500M
         reservations:
-          cpus: '0.25'
-          memory: 300M
+          cpus: '0.5'
+          memory: 1000M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   backend:
     build:
@@ -43,7 +48,7 @@ services:
     env_file:
       - .env
     environment:
-      - WORKERS=2
+      - WORKERS=${WORKERS}
       - LOG_LEVEL=${LOG_LEVEL:-warning}
       - MONGODB_URL=${MONGODB_URL}
     volumes:
@@ -62,16 +67,16 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.4'
-          memory: 350M
+          cpus: '0.8'
+          memory: 1800M
         reservations:
-          cpus: '0.2'
-          memory: 256M
+          cpus: '0.4'
+          memory: 1200M
     logging:
       driver: "json-file"
       options:
-        max-size: "5m"
-        max-file: "2"
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   mongo_data:
