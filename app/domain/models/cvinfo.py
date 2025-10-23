@@ -9,7 +9,7 @@ class CVInfo:
         self,
         personal_cv_url: str,
         skills: List[str],
-        english_level: str,
+        english_level: Literal["basic", "intermediate", "advanced"],
         works_in_it: bool,
         last_update: Optional[datetime] = None,
     ):
@@ -36,7 +36,9 @@ class CVInfo:
         self.__personal_cv_url = BModel.validate_url(value, "personal_cv_url")
 
     @english_level.setter
-    def english_level(self, value: Literal["basic", "intermediate", "advanced"]):
+    def english_level(
+        self, value: Literal["basic", "intermediate", "advanced"]
+    ):
         VALID_ENGLISH_LEVELS = ["basic", "intermediate", "advanced"]
         if value not in VALID_ENGLISH_LEVELS:
             raise Exception("Invalid English Level")
