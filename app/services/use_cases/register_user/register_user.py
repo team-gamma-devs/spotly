@@ -57,12 +57,4 @@ class RegisterUser:
         if github_username:
             pass
 
-        update_user = await self.user_processor.update_user_external_data(
-            user_id=registered_user_id,
-            github_info_id="",
-        )
-
-        if not update_user:
-            raise Exception("Unexpected error updating user")
-
         return registered_user_id
