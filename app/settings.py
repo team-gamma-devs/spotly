@@ -43,8 +43,9 @@ class BaseSettingsClass(BaseSettings):
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
     allowed_hosts: list[str] = [
-        "spotly.work",
-        "www.spotly.work",
+        "api.spotly.work",
+        "spotly-load-balancer-359283243.sa-east-1.elb.amazonaws.com."
+        "172.*"
         "localhost",
         "127.0.0.1",
     ]
