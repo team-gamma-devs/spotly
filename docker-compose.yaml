@@ -45,7 +45,7 @@ services:
     environment:
       - WORKERS=2
       - LOG_LEVEL=${LOG_LEVEL:-warning}
-      - MONGODB_URL=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017
+      - MONGODB_URL=${MONGODB_URL}
     volumes:
       - ./logs:/app/logs
     depends_on:
