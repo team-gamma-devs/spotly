@@ -17,7 +17,7 @@ class User(BModel):
         cohort: Optional[int] = None,
         github_info: Optional[str] = None,
         cv_info: Optional[CVInfo] = None,
-        tutors_feedback: List[str] = None,
+        tutors_feedback: Optional[List[str]] = None,
         role: str = "graduate",
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
@@ -28,7 +28,7 @@ class User(BModel):
         self.email = email
         self.cohort = cohort
         self.avatar_url = avatar_url
-        self.github_info = github_info
+        self.__github_info = github_info
         self.cv_info = cv_info
         self._tutors_feedback = tutors_feedback
         self.__role = role
@@ -63,7 +63,7 @@ class User(BModel):
 
     @property
     def tutors_feedback(self):
-        return self.__tutors_feedback
+        return self._tutors_feedback
 
     @property
     def role(self):
@@ -82,7 +82,9 @@ class User(BModel):
         self.__email = BModel.validate_email(value)
 
     @cohort.setter
-    def cohort(self, value: int):
+    def cohort(self, value: Optional[int]):
+        if not value:
+            self.__cohort = None
         self.__cohort = BModel.validate_number(value, "Cohort")
 
     @avatar_url.setter
@@ -90,9 +92,12 @@ class User(BModel):
         self.__avatar_url = BModel.validate_url(value, "avatar_url")
 
     @cv_info.setter
-    def cv_info(self, value: CVInfo):
+    def cv_info(self, value: Optional[CVInfo]):
+        if not value:
+            self.__cv_info = None
         if not isinstance(value, CVInfo):
             raise Exception("cv_info must be a instantiated class of CVInfo")
+        self.__cv_info = value.to_dict()
 
     def tutors_feedback_add(self, feedback: Dict[str, Any]):
         pass
