@@ -21,7 +21,7 @@ class CVInfoProcessor:
 
     async def process_cv_info(
         self, cv_info: Dict[str, Any], cv_file: UploadFile
-    ) -> str:
+    ) -> CVInfo:
         cv_file_url = await self._upload_cv(cv_file)
         cv_data = {
             "personal_cv_url": cv_file_url,
