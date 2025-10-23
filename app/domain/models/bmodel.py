@@ -4,18 +4,19 @@ from email_validator import validate_email, EmailNotValidError
 from bson import ObjectId
 from bson.errors import InvalidId
 import validators
+from typing import Optional
 
 
 class BModel(ABC):
     def __init__(
         self,
-        id: str | None = None,
-        created_at: datetime | None = None,
-        updated_at: datetime | None = None,
+        id: Optional[str] = None,
+        created_at: Optional[datetime] = None,
+        updated_at: Optional[datetime] = None,
     ):
         self.__id = id
-        self.__created_at = created_at or datetime.now()
-        self.updated_at = updated_at or datetime.now()
+        self.__created_at = self.validate_datetime(created_at) or datetime.now()
+        self.updated_at = self.validate_datetime(updated_at) or datetime.now()
 
     @property
     def id(self):
@@ -82,3 +83,12 @@ class BModel(ABC):
         if not isinstance(value, bool):
             raise Exception(f"{field_name} must be a boolean")
         return value
+
+    @staticmethod
+    def validate_datetime(value: datetime, field_name: str) -> datetime:
+        if not isinstance(value, datetime):
+            raise TypeError(f"{field_name} must be a valid datetime")
+        if value < datetime.now():
+            raise ValueError(
+                f"{field_name} cannot be earlier than the current date/time"
+            )
