@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, HTTPException, status
+from fastapi import APIRouter, UploadFile, HTTPException, status, Request
 from fastapi import File, Form
 from typing import Optional
 
@@ -9,6 +9,7 @@ from app.services.exceptions.register_user_exceptions import (
     InvalidFileType,
     InvalidCV,
 )
+from app.infrastructure.ai.exceptions import ParsingError, ServiceLimitError
 
 logger = get_logger(__name__)
 
@@ -18,24 +19,21 @@ router = APIRouter(
 )
 
 
+# @require_jwt()
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def sign_up(
+    request: Request,
     github_username: Optional[str] = Form(None),
     personal_cv: UploadFile = File(...),
     linkedin_cv: UploadFile = File(...),
     avatar_img: UploadFile = File(...),
 ):
-
-    if avatar_img and not avatar_img.content_type.startswith("image/"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"{avatar_img.filename} is not a valid image",
-        )
+    email = request.state.user.get("email")
 
     register_user = RegisterUser()
     try:
         registered_user = await register_user.register_user(
-            personal_cv, linkedin_cv, avatar_img
+            personal_cv, linkedin_cv, avatar_img, github_username, email
         )
     except FileTooLarge as e:
         logger.warning(f"Error: {e}")
@@ -47,10 +45,15 @@ async def sign_up(
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=str(e)
         )
-    except InvalidCV as e:
+    except (InvalidCV, ParsingError) as e:
         logger.warning(f"Error: {e}")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)
+        )
+    except ServiceLimitError as e:
+        logger.warning(f"Error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(e)
         )
 
     return registered_user
