@@ -1,11 +1,9 @@
-from datetime import datetime, timedelta
-from jose import jwt
 import logging
-from typing import Dict, Any
 
 from app.settings import settings
 from app.domain.models.user import User
 from app.domain.models.invitation import Invitation
+from app.infrastructure.supabase import supabase_client
 from app.infrastructure.database.repositories.user_repository import UserRepository
 from app.infrastructure.database.repositories.invitation_repository import (
     InvitationRepository,
@@ -19,59 +17,99 @@ logger = logging.getLogger(__name__)
 
 
 class UserLogin:
+    """
+    Service responsible for handling user login via Supabase magic links.
+
+    Verifies if a user exists or checks invitations for non-registered users,
+    then triggers sending a magic link to the provided email.
+    """
+
     def __init__(
         self,
+        login_client=supabase_client,
         user_repo: UserRepository = None,
         invitation_repo: InvitationRepository = None,
     ):
+        """
+        Initialize the UserLogin service.
+
+        Args:
+            login_client: Supabase client instance used for authentication.
+            user_repo (UserRepository, optional): Repository to manage user data.
+            invitation_repo (InvitationRepository, optional): Repository to manage invitation data.
+        """
+        self.login_client = login_client
         self.user_repo = user_repo or UserRepository()
         self.invitation_repo = invitation_repo or InvitationRepository()
 
-    async def login(self, email: str) -> Dict[str, Any]:
+    async def login(self, email: str):
+        """
+        Attempt to log in a user with the provided email.
+
+        If the user exists, a magic link is sent directly.
+        If the user does not exist, verifies if there is a valid invitation first.
+
+        Args:
+            email (str): The email of the user attempting to log in.
+
+        Raises:
+            InvitationNotFound: If no invitation exists for a non-registered email.
+            InvitationExpired: If the invitation for a non-registered email has expired.
+        """
         user = await self._verify_user(email)
-        data = {"is_first_time": False, "role": "graduated"}
         if not user:
-            invitation = await self._verify_invitation(email)
-            if not invitation:
-                logger.warning(f"User {email} attempted to login but is not invited")
-                raise InvitationNotFound(
-                    "Your email is not associated with a registered user or any invitation. Please contact the Holberton staff."
-                )
+            await self._verify_invitation(email)
 
-            if not invitation.is_valid():
-                logger.warning(
-                    f"User {email} was invited but the invitation has expired"
-                )
-                raise InvitationExpired(
-                    "The provided email corresponds to an invited user, but the invitation has expired. Please contact the Holberton staff."
-                )
-
-            data["is_first_time"] = True
-        else:
-            data["token"] = self._generate_jwt(user)
-            data["role"] = user.role
-
-        return data
+        magic_link = {
+            "email": email,
+            "options": {
+                "should_create_user": False,
+                "email_redirect_to": settings.supabase_redirect_url,
+            },
+        }
+        self.login_client.auth.sign_in_with_otp(magic_link)
+        logger.info(f"Magic Link correctly sent to {email}")
 
     async def _verify_user(self, email: str) -> User:
+        """
+        Check if a user with the given email exists in the database.
+
+        Args:
+            email (str): Email to search for.
+
+        Returns:
+            User | None: Returns a User object if found, otherwise None.
+        """
         user_data = await self.user_repo.find_by_email(email)
         if not user_data:
             return None
         user = User(**user_data)
         return user
 
-    async def _verify_invitation(self, email: str) -> Invitation:
+    async def _verify_invitation(self, email: str):
+        """
+        Check if a valid invitation exists for the given email.
+
+        Args:
+            email (str): Email to check for invitation.
+
+        Raises:
+            InvitationNotFound: If no invitation exists for the email.
+            InvitationExpired: If the invitation exists but has expired.
+        """
         invitation_data = await self.invitation_repo.find_by_email(email)
         if not invitation_data:
             return None
+
         invitation = Invitation(**invitation_data)
-        return invitation
+        if not invitation:
+            logger.warning(f"User {email} attempted to login but is not invited")
+            raise InvitationNotFound(
+                "Your email is not associated with a registered user or any invitation. Please contact the Holberton staff."
+            )
 
-    def _generate_jwt(self, user: User) -> str:
-        expire = datetime.now() + timedelta(
-            minutes=settings.access_token_expire_minutes
-        )
-        payload = {"sub": str(user.id), "exp": expire}
-
-        token = jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
-        return token
+        if not invitation.is_valid():
+            logger.warning(f"User {email} was invited but the invitation has expired")
+            raise InvitationExpired(
+                "The provided email corresponds to an invited user, but the invitation has expired. Please contact the Holberton staff."
+            )
