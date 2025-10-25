@@ -13,9 +13,10 @@ class User(BModel):
         last_name: str,
         email: str,
         avatar_url: str,
+        avatar_path: str,
         id: Optional[str] = None,
         cohort: Optional[int] = None,
-        github_info: Optional[str] = None,
+        github: Optional[str] = None,
         cv_info: Optional[CVInfo] = None,
         tutors_feedback: Optional[List[str]] = None,
         role: str = "graduate",
@@ -28,7 +29,8 @@ class User(BModel):
         self.email = email
         self.cohort = cohort
         self.avatar_url = avatar_url
-        self.__github_info = github_info
+        self.avatar_path = avatar_path
+        self.__github = github
         self.cv_info = cv_info
         self._tutors_feedback = tutors_feedback
         self.__role = role
@@ -54,8 +56,12 @@ class User(BModel):
         return self.__avatar_url
 
     @property
+    def avatar_path(self):
+        return self.__avatar_path
+
+    @property
     def github_info(self):
-        return self.__github_info
+        return self.__github
 
     @property
     def cv_info(self):
@@ -91,6 +97,10 @@ class User(BModel):
     def avatar_url(self, value: str):
         self.__avatar_url = BModel.validate_url(value, "avatar_url")
 
+    @avatar_path.setter
+    def avatar_path(self, value: str):
+        self.__avatar_path = BModel.validate_string(value, "avatar_path")
+
     @cv_info.setter
     def cv_info(self, value: Optional[CVInfo]):
         if not value:
@@ -108,6 +118,7 @@ class User(BModel):
             "last_name": self.last_name,
             "email": self.email,
             "avatar_url": self.avatar_url,
+            "avatar_path": self.avatar_path,
             "role": self.role,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
