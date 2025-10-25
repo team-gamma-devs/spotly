@@ -31,6 +31,12 @@ class BaseSettingsClass(BaseSettings):
     # Gemini
     gemini_api_key: str
 
+    # Supabase
+    supabase_url: str
+    supabase_service_key: str
+    supabase_bucket: str
+    supabase_redirect_url: str
+
     # File size limits
     max_pdf_size: int
     max_csv_size: int
@@ -44,8 +50,7 @@ class BaseSettingsClass(BaseSettings):
     refresh_token_expire_days: int = 7
     allowed_hosts: list[str] = [
         "api.spotly.work",
-        "spotly-load-balancer-359283243.sa-east-1.elb.amazonaws.com."
-        "172.*"
+        "spotly-load-balancer-359283243.sa-east-1.elb.amazonaws.com.",
         "localhost",
         "127.0.0.1",
     ]
