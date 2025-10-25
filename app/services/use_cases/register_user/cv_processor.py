@@ -15,6 +15,7 @@ from app.services.exceptions.register_user_exceptions import (
     FileTooLarge,
     InvalidCV,
 )
+from app.infrastructure.ai.exceptions import ServiceLimitError, ParsingError
 
 logger = logging.getLogger(__name__)
 
@@ -49,17 +50,22 @@ class CVProcessor:
 
         linkedin_cv_parsed = None
         if linkedin_cv_text:
+            logger.info(f"Parsed text: {linkedin_cv_text}")
             linkedin_cv_parsed = await self._parse_pdf_text(
                 personal_cv_text, CVInfoSchema, self.system_prompt, self.user_prompt
             )
         else:
             raise InvalidCV("The provided LinkedIn CV file is corrupted")
 
+        if not linkedin_cv_parsed:
+            raise ParsingError("Failed to parse Linkedin CV, try agin")
+
         result = {
             "first_name": personal_cv_parsed.first_name,
             "last_name": personal_cv_parsed.last_name,
             "skills": list(set(personal_cv_parsed.skills + linkedin_cv_parsed.skills)),
             "english_level": personal_cv_parsed.english_level,
+            "linkedin_url": linkedin_cv_parsed.linkedin_url,
             "works_in_it": personal_cv_parsed.works_in_it,
         }
 
@@ -125,7 +131,7 @@ class CVProcessor:
             parsed_cv = await ai_service.parse_text_with_schema(
                 cv_text, schema, system_prompt, user_prompt
             )
-        except Exception as e:
+        except ParsingError as e:
             logger.critical(f"Failed to parse cv: {e}")
         return parsed_cv
 
