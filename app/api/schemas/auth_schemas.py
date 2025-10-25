@@ -7,18 +7,6 @@ class LoginRequest(BaseModel):
     email: EmailStr
 
 
-class LoginResponse(BaseModel):
-    message: str
-    access_token: str = Field(..., alias="accessToken")
-    token_type: str = Field(..., alias="tokenType")
-    role: str
-    is_first_time: bool = Field(..., alias="isFirstTime")
-
-    class Config:
-        populate_by_name = True
-        validate_by_name = True
-
-
 class UserResponse(BaseModel):
     id: str
     first_name: str = Field(..., alias="firstName")
