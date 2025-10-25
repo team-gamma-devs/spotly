@@ -4,7 +4,7 @@ import logging
 from app.settings import settings
 from app.domain.models.user import User
 from app.infrastructure.database.repositories.user_repository import UserRepository
-from app.services.exceptions.user_login_exceptions import UserNotRegistered
+from app.services.exceptions.user_login_exceptions import UserNotLoggedIn
 
 logger = logging.getLogger(__name__)
 
@@ -29,11 +29,11 @@ class GetUser:
                 raise JWTError
         except JWTError as e:
             logging.warning(f"Error: {e}")
-            raise UserNotRegistered("Expired or invalid token")
+            raise UserNotLoggedIn("Expired or invalid token")
 
         user = await self.user_repo.find_by_id(user_id)
 
         if user is None:
-            raise UserNotRegistered("User not found")
+            raise UserNotLoggedIn("User not found")
 
         return User(**user)
