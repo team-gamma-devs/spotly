@@ -18,12 +18,16 @@ from app.services.exceptions.csv_invitation_exceptions import (
     MissingColumnsException,
 )
 
+# JWT Verify Decorator
+from app.api.decorators.jwt_validation import require_jwt
+
 router = APIRouter(
     prefix="/manager",
     tags=["manager"],
 )
 
 
+# @require_jwt(for_manager=True)
 @router.post("/uploadCSV", status_code=status.HTTP_202_ACCEPTED)
 async def upload_csv(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
     MAX_CSV_SIZE_BYTES = settings.max_csv_size * 1024 * 1024
@@ -58,12 +62,14 @@ async def upload_csv(background_tasks: BackgroundTasks, file: UploadFile = File(
     return {"message": "Invitations generated successfully"}
 
 
+# @require_jwt(for_manager=True)
 @router.post("/invitations", status_code=status.HTTP_200_OK)
 async def filter_invitations():
 
     pass
 
 
+# @require_jwt(for_manager=True)
 @router.get(
     "/filters", response_model=FiltersListResponse, status_code=status.HTTP_200_OK
 )
@@ -72,6 +78,7 @@ async def get_filters():
     return {"filters": await filters.get_available_filters()}
 
 
+# @require_jwt(for_manager=True)
 @router.post("/search_graduates", status_code=status.HTTP_200_OK)
 async def search_graduates(filters: FiltersPayload):
     filters_processor = GraduatesFilter()
@@ -79,6 +86,7 @@ async def search_graduates(filters: FiltersPayload):
     return result
 
 
+# @require_jwt(for_manager=True)
 @router.post("/feedback", status_code=status.HTTP_201_CREATED)
 async def tutors_feedback():
     pass
