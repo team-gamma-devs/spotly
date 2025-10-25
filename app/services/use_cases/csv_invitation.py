@@ -9,6 +9,7 @@ from app.services.exceptions.csv_invitation_exceptions import (
     MissingColumnsException,
 )
 from app.infrastructure.email import resend_email_service
+from app.infrastructure.supabase import supabase_client
 from app.domain.ports.email_service_port import IEmailService
 from app.infrastructure.database.repositories.invitation_repository import (
     InvitationRepository,
@@ -37,6 +38,7 @@ class CSVInvitationProcessor:
 
     def __init__(
         self,
+        supabase_service=supabase_client,
         email_service: IEmailService = resend_email_service,
         invitation_repo=None,
     ):
@@ -47,6 +49,7 @@ class CSVInvitationProcessor:
             email_service: Optional; service used to send emails. Defaults to resend_email_service.
             invitation_repo: Optional; instance of InvitationRepository or mock for testing.
         """
+        self.supabase_service = supabase_service
         self.email_service = email_service
         # invitation_repo parameter allows mocking the repository during testing.
         self.invitation_repo = invitation_repo or InvitationRepository()
@@ -94,11 +97,7 @@ class CSVInvitationProcessor:
         if not reader.fieldnames:
             raise InvalidCSVException("CSV is empty or missing header")
 
-        missing = [
-            col
-            for col in self.REQUIRED_COLUMNS
-            if col not in reader.fieldnames
-        ]
+        missing = [col for col in self.REQUIRED_COLUMNS if col not in reader.fieldnames]
         if missing:
             raise MissingColumnsException(missing)
 
@@ -124,9 +123,7 @@ class CSVInvitationProcessor:
                 )
                 invitations.append(invitation)
             except Exception as e:
-                logger.warning(
-                    f"Error creating invitation of {graduated}: {e}"
-                )
+                logger.warning(f"Error creating invitation of {graduated}: {e}")
         return invitations
 
     async def _save_invitations(self, invitations: List[Invitation]):
@@ -155,9 +152,18 @@ class CSVInvitationProcessor:
                             f"Expired invitation for {invitation.email} replaced."
                         )
                 await self.invitation_repo.create(invitation.to_dict())
-                logger.info(
-                    f"Invitation saved successfully for {invitation.email}"
+                logger.info(f"Invitation saved successfully for {invitation.email}")
+                response = supabase_client.auth.admin.create_user(
+                    {
+                        "email": invitation.email,
+                        "email_confirm": True,
+                        "user_metadata": {
+                            "role": "graduate",
+                            "is_first_time": "true",
+                        },
+                    }
                 )
+                logger.info(f"Response supabase: {response.__dict__}")
             except Exception as e:
                 logger.error(
                     f"Failed to save invitation for {invitation.email}: {str(e)}",
@@ -180,9 +186,7 @@ class CSVInvitationProcessor:
                     "Spotly app invitation from Holberton",
                     body,
                 )
-                logger.info(
-                    f"Invitation email sent successfully to {invitation.email}"
-                )
+                logger.info(f"Invitation email sent successfully to {invitation.email}")
             except Exception as e:
                 logger.error(
                     f"Failed to send email to {invitation.email}: {str(e)}",
