@@ -34,6 +34,17 @@ class CVInfoSchema(BaseModel):
         
         If certifications are mentioned (TOEFL, IELTS, Cambridge), use those to classify the level."""
     )
+    linkedin_url: str = Field(
+        description="""Extract only the public LinkedIn URL from this CV. Strict rules:
+
+        - The URL always ends right before "(LinkedIn)".
+        - Include absolutely everything between "/in/" or "/pub/" and "(LinkedIn)", including hyphens, numbers, letters, and underscores.
+        - Add "https://" prefix if missing.
+        - Do not invent, modify, or truncate the URL in any way.
+        - Return only the LinkedIn URL.
+        - Example: if the CV contains "www.linkedin.com/in/john-doe-7451b2597 (LinkedIn)", return "https://www.linkedin.com/in/john-doe-7451b2597".
+        """
+    )
     works_in_it: bool = Field(
         description="""Does the candidate currently work or have recent experience in IT/Technology?
         Extract ONLY explicitly mentioned works in CV/Resumee. Do not infer or assume works.

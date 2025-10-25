@@ -8,6 +8,7 @@ Extract and return ONLY these fields:
 - last_name (str)
 - skills (List[str])
 - english_level (str)
+- linkedin_url (str)
 - works_in_it (bool)
 
 Guidelines:
