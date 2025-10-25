@@ -11,6 +11,7 @@ class MongoDB:
         """Connect to MongoDB"""
         cls.client = AsyncIOMotorClient(mongodb_url)
         cls.db = cls.client[database_name]
+        await cls.client.admin.command("ping")
 
     @classmethod
     async def close_db(cls):
