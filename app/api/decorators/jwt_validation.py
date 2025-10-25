@@ -6,7 +6,7 @@ from typing import Callable, Any
 from app.settings import settings
 
 
-def require_jwt(for_admin: bool = False):
+def require_jwt(for_manager: bool = False):
     """
     Decorator that validates JWT tokens.
     Optionally checks if user is admin if `for_admin=True`.
@@ -40,7 +40,7 @@ def require_jwt(for_admin: bool = False):
             request.state.user = payload
 
             # Check de rol admin si se requiere
-            if for_admin and not payload.get("is_admin", False):
+            if for_manager and not payload.get("is_admin", False):
                 raise HTTPException(status_code=403, detail="Admin access required")
 
             return await func(*args, **kwargs)
