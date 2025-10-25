@@ -8,3 +8,7 @@ class FileTooLarge(Exception):
 
 class InvalidCV(Exception):
     pass
+
+
+class UserAlreadyExists(Exception):
+    pass
