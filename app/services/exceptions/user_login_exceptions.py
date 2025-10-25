@@ -8,3 +8,7 @@ class InvitationNotFound(Exception):
 
 class InvitationExpired(Exception):
     pass
+
+
+class UserNotLoggedIn(Exception):
+    pass
