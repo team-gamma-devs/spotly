@@ -1,9 +1,10 @@
 from fastapi import Request
 from fastapi.responses import JSONResponse
 import traceback
-import logging
 
-logger = logging.getLogger(__name__)
+from app.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 async def global_exceptions_middleware(request: Request, call_next):

@@ -1,11 +1,11 @@
 from fastapi import UploadFile
-import logging
 import re
 import fitz
 from typing import Dict, Any, Optional
 
 
 from app.settings import settings
+from app.logger import get_logger
 from app.services.prompts.prompts import SYSTEM_PROMPT, USER_PROMPT
 from app.services.schemas.cv_info_schema import CVInfoSchema
 from app.domain.ports.ia_service_port import IAService
@@ -17,7 +17,7 @@ from app.services.exceptions.register_user_exceptions import (
 )
 from app.infrastructure.ai.exceptions import ServiceLimitError, ParsingError
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class CVProcessor:

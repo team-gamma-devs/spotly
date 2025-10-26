@@ -1,11 +1,11 @@
 from typing import List, Optional, Dict, Any
 from motor.motor_asyncio import AsyncIOMotorCollection
 from bson import ObjectId
-import logging
 
+from app.logger import get_logger
 from app.domain.ports.repository_port import IBaseRepository
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BaseRepository(IBaseRepository):

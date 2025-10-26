@@ -1,10 +1,10 @@
 from typing import Optional, Any
-import logging
 
+from app.logger import get_logger
 from app.domain.models.user import User
 from app.infrastructure.database.repositories.user_repository import UserRepository
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class GraduatesFilter:

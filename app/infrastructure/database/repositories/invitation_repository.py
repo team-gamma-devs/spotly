@@ -1,11 +1,11 @@
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import Optional, Dict, Any, List
-import logging
 
+from app.logger import get_logger
 from app.infrastructure.database.repositories.base_repository import BaseRepository
 from app.infrastructure.database import MongoDB
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class InvitationRepository(BaseRepository):

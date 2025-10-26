@@ -1,12 +1,14 @@
 from jose import jwt, JWTError
-import logging
 
+from typing import Any
+
+from app.logger import get_logger
 from app.settings import settings
 from app.domain.models.user import User
 from app.infrastructure.database.repositories.user_repository import UserRepository
 from app.services.exceptions.user_login_exceptions import UserNotLoggedIn
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class GetUser:
@@ -16,32 +18,22 @@ class GetUser:
     ):
         self.user_repo = user_repo or UserRepository()
 
-    async def verify(self, token: str) -> User:
-        try:
-            logger.info(f"Token: {token}")
-            payload = jwt.decode(
-                token, settings.secret_key, algorithms=[settings.algorithm]
-            )
-            user_id: str = payload.get("sub")
-            logger.info(f"Payload: {payload}, User_id: {user_id}, Token: {token}")
+    async def verify(self, user: dict[str, Any]) -> dict[str, Any]:
+        user_metadata = self._extract_metadata(user)
+        user_data = await self._get_user_by_email(user["email"])
+        return user_metadata | user_data.to_dict() if user_data else user_metadata
 
-            if user_id is None:
-                raise JWTError
-        except JWTError as e:
-            logging.warning(f"Error: {e}")
-            raise UserNotLoggedIn("Expired or invalid token")
+    def _extract_metadata(self, user: str):
+        user_metadata = user["user_metadata"]
+        data = {
+            "email": user["email"],
+            "role": user_metadata["role"],
+            "is_first_time": user_metadata["is_first_time"],
+        }
+        return data
 
-        user = await self.user_repo.find_by_id(user_id)
-
-        if user is None:
-            raise UserNotLoggedIn("User not found")
-
-        return User(**user)
-
-    async def get_user_by_email(self, email: str) -> User:
+    async def _get_user_by_email(self, email: str) -> User:
         user = await self.user_repo.find_by_email(email)
-
-        if user is None:
-            raise UserNotLoggedIn("User not found")
-
+        if not user:
+            return None
         return User(**user)

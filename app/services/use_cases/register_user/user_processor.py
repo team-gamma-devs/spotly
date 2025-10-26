@@ -2,8 +2,8 @@ from fastapi import UploadFile
 from typing import Dict, Any, Optional
 from PIL import Image
 from io import BytesIO
-import logging
 
+from app.logger import get_logger
 from app.settings import settings
 from app.domain.models.user import User
 from app.domain.models.cvinfo import CVInfo
@@ -20,7 +20,7 @@ from app.services.exceptions.register_user_exceptions import (
     UserAlreadyExists,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class UserProcessor:

@@ -2,11 +2,11 @@ from fastapi import Request, HTTPException
 from functools import wraps
 from jose import jwt, JWTError
 from typing import Callable, Any
-import logging
 
+from app.logger import get_logger
 from app.settings import settings
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def require_jwt(for_manager: bool = False):

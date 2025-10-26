@@ -8,9 +8,10 @@ from fastapi import (
     status,
     Body,
 )
-import logging
+
 
 # General Config
+from app.logger import get_logger
 from app.settings import settings
 
 # Use Cases
@@ -37,7 +38,7 @@ from app.services.exceptions.delete_user_exceptions import DeleteError
 # JWT Verify Decorator
 from app.api.decorators.jwt_validation import require_jwt
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 router = APIRouter(

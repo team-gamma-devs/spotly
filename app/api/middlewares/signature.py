@@ -1,13 +1,14 @@
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
-import logging
+
 import hmac
 import hashlib
 import time
 
+from app.logger import get_logger
 from app.settings import settings
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def verify_signature_and_origin(request: Request, call_next):

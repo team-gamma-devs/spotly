@@ -1,8 +1,8 @@
 import csv
 from typing import List
-import logging
 from datetime import datetime
 
+from app.logger import get_logger
 from app.domain.models.invitation import Invitation
 from app.services.exceptions.csv_invitation_exceptions import (
     InvalidCSVException,
@@ -15,7 +15,7 @@ from app.infrastructure.database.repositories.invitation_repository import (
     InvitationRepository,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class CSVInvitationProcessor:

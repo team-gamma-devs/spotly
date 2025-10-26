@@ -1,7 +1,7 @@
 from fastapi import UploadFile
-import logging
 from typing import Optional
 
+from app.logger import get_logger
 from app.domain.models.invitation import Invitation
 from app.services.use_cases.register_user.cv_processor import CVProcessor
 from app.services.use_cases.register_user.cv_info_processor import (
@@ -20,7 +20,7 @@ from app.services.exceptions.user_login_exceptions import (
     InvitationExpired,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class RegisterUser:

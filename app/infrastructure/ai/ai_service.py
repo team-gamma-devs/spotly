@@ -1,14 +1,14 @@
 import asyncio
-import logging
 from pydantic import BaseModel, ValidationError
 from pydantic_ai import Agent, BinaryContent
 from pydantic_ai.models.google import GoogleModel, GoogleModelSettings
 from pydantic_ai.providers.google import GoogleProvider
 
 from app.settings import settings
+from app.logger import get_logger
 from app.infrastructure.ai.exceptions import ParsingError, ServiceLimitError
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class AIService:

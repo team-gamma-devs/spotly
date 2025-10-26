@@ -1,9 +1,10 @@
 import time
 import ipaddress
 from fastapi import Request
-import logging
 
-logger = logging.getLogger(__name__)
+from app.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 async def log_requests_middleware(request: Request, call_next):

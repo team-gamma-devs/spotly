@@ -1,5 +1,4 @@
-import logging
-
+from app.logger import get_logger
 from app.settings import settings
 from app.domain.models.user import User
 from app.domain.models.invitation import Invitation
@@ -13,7 +12,7 @@ from app.services.exceptions.user_login_exceptions import (
     InvitationExpired,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class UserLogin:

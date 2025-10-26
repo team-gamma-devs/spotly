@@ -1,12 +1,12 @@
 from typing import Any
-import logging
 
+from app.logger import get_logger
 from app.domain.models.user import User
 from app.domain.models.tutorfeedback import TutorFeedback
 from app.infrastructure.database.repositories.user_repository import UserRepository
 from app.services.exceptions.post_feedback_exceptions import InvalidFeedback
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class PostFeedback:

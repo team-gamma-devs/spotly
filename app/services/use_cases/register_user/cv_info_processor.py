@@ -1,7 +1,7 @@
 from fastapi import UploadFile
 from typing import Dict, Any, List, Optional
-import logging
 
+from app.logger import get_logger
 from app.domain.models.cvinfo import CVInfo
 from app.infrastructure.supabase.bucket_service import SupabaseStorageRepository
 from app.domain.ports.supabase_storage_port import ISupabaseStorage
@@ -9,7 +9,7 @@ from app.infrastructure.database.repositories.filters_repository import (
     FiltersRepository,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class CVInfoProcessor:
