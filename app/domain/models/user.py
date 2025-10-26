@@ -127,7 +127,13 @@ class User(BModel):
         self._tutors_feedback = value
 
     def tutors_feedback_add(self, feedback: Dict[str, Any]):
-        pass
+        if not isinstance(feedback, dict):
+            raise TypeError("Invalid Feedback")
+
+        if not self.tutors_feedback:
+            self.tutors_feedback = [feedback]
+        else:
+            self.tutors_feedback = self.tutors_feedback + [feedback]
 
     def to_dict(self) -> dict:
         data = {
