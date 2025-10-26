@@ -3,7 +3,6 @@ import re
 from typing import Optional, List, Dict, Any
 
 from app.domain.models.bmodel import BModel
-from app.domain.models.cvinfo import CVInfo
 
 
 class User(BModel):
@@ -17,7 +16,7 @@ class User(BModel):
         id: Optional[str] = None,
         cohort: Optional[int] = None,
         github: Optional[str] = None,
-        cv_info: Optional[CVInfo] = None,
+        cv_info: Optional[dict] = None,
         tutors_feedback: Optional[List[str]] = None,
         role: str = "graduate",
         created_at: Optional[datetime] = None,
@@ -30,9 +29,9 @@ class User(BModel):
         self.cohort = cohort
         self.avatar_url = avatar_url
         self.avatar_path = avatar_path
-        self.__github = github
+        self.github = github
         self.cv_info = cv_info
-        self._tutors_feedback = tutors_feedback
+        self.tutors_feedback = tutors_feedback
         self.__role = role
 
     @property
@@ -60,7 +59,7 @@ class User(BModel):
         return self.__avatar_path
 
     @property
-    def github_info(self):
+    def github(self):
         return self.__github
 
     @property
@@ -93,6 +92,13 @@ class User(BModel):
             self.__cohort = None
         self.__cohort = BModel.validate_number(value, "Cohort")
 
+    @github.setter
+    def github(self, value: Optional[str]):
+        if not value:
+            self.__github = None
+
+        self.__github = BModel.validate_string(value, "github")
+
     @avatar_url.setter
     def avatar_url(self, value: str):
         self.__avatar_url = BModel.validate_url(value, "avatar_url")
@@ -102,12 +108,23 @@ class User(BModel):
         self.__avatar_path = BModel.validate_string(value, "avatar_path")
 
     @cv_info.setter
-    def cv_info(self, value: Optional[CVInfo]):
+    def cv_info(self, value: Optional[dict]):
         if not value:
             self.__cv_info = None
-        if not isinstance(value, CVInfo):
-            raise Exception("cv_info must be a instantiated class of CVInfo")
-        self.__cv_info = value.to_dict()
+        if not isinstance(value, dict):
+            raise Exception("cv_info must be a dict")
+        self.__cv_info = value
+
+    @tutors_feedback.setter
+    def tutors_feedback(self, value: Optional[list[dict[str, Any]]]):
+        if not value:
+            self._tutors_feedback = None
+            return
+
+        if not isinstance(value, list):
+            raise ValueError(f"{value} must be a list of feedbacks")
+
+        self._tutors_feedback = value
 
     def tutors_feedback_add(self, feedback: Dict[str, Any]):
         pass
@@ -126,8 +143,8 @@ class User(BModel):
 
         if self.id:
             data["id"] = self.id
-        if self.github_info:
-            data["github_info"] = self.github_info
+        if self.github:
+            data["github"] = self.github
         if self.cv_info:
             data["cv_info"] = self.cv_info
         if self.tutors_feedback:
