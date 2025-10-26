@@ -12,6 +12,31 @@ logger = get_logger(__name__)
 
 
 async def verify_signature_and_origin(request: Request, call_next):
+    """
+    Middleware to verify request authenticity by checking the origin and HMAC signature.
+
+    Security checks:
+        1. Verify that the request originates from the expected frontend (X-Frontend-Origin header).
+        2. Verify that the request includes a valid HMAC signature (X-Signature) based on the payload and timestamp.
+        3. Optional: Prevent replay attacks by validating that the timestamp is recent (within 5 minutes).
+
+    Steps:
+        - Extract headers: X-Frontend-Origin, X-Signature, and X-Timestamp.
+        - Validate origin matches expected frontend.
+        - Ensure signature and timestamp are present.
+        - Reconstruct the message from timestamp and request body.
+        - Compute HMAC using shared frontend secret and compare in constant time.
+        - Validate timestamp is within allowed time window (prevent replay attacks).
+        - Restore the request body for downstream middlewares or endpoints.
+
+    Returns:
+        - JSONResponse with 401 Unauthorized if any check fails.
+        - Otherwise, forwards request to the next middleware or endpoint.
+
+    Notes:
+        - Assumes frontend_secret is configured in settings.
+        - Logs all failed attempts with relevant IP and path information.
+    """
     frontend_secret = settings.frontend_secret
 
     # Get signature, origin and message from headers
@@ -72,7 +97,7 @@ async def verify_signature_and_origin(request: Request, call_next):
         current_time = int(time.time() * 1000)
         time_diff = abs(current_time - request_time)
 
-        if time_diff > 300000:
+        if time_diff > 300000:  # 5 minutes in milliseconds
             logger.warning(
                 f"Expired timestamp from IP: {request.client.host if request.client else 'unknown'}"
             )

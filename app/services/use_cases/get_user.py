@@ -1,5 +1,3 @@
-from jose import jwt, JWTError
-
 from typing import Any
 
 from app.logger import get_logger
@@ -12,18 +10,48 @@ logger = get_logger(__name__)
 
 
 class GetUser:
-    def __init__(
-        self,
-        user_repo: UserRepository = None,
-    ):
+    """
+    Use case for retrieving and verifying a user.
+
+    Attributes:
+        user_repo (UserRepository): Repository to access user data.
+    """
+
+    def __init__(self, user_repo: UserRepository = None):
+        """
+        Initialize the GetUser use case.
+
+        Args:
+            user_repo (UserRepository, optional): Custom user repository.
+                Defaults to standard UserRepository.
+        """
         self.user_repo = user_repo or UserRepository()
 
     async def verify(self, user: dict[str, Any]) -> dict[str, Any]:
+        """
+        Verify a user and return combined metadata and database information.
+
+        Args:
+            user (dict[str, Any]): Dictionary representing the user from authentication system.
+
+        Returns:
+            dict[str, Any]: Combined dictionary of user metadata and database information.
+                If user is not found in the database, returns only the metadata.
+        """
         user_metadata = self._extract_metadata(user)
         user_data = await self._get_user_by_email(user["email"])
         return user_metadata | user_data.to_dict() if user_data else user_metadata
 
-    def _extract_metadata(self, user: str):
+    def _extract_metadata(self, user: dict[str, Any]) -> dict[str, Any]:
+        """
+        Extract relevant metadata from the authentication user dictionary.
+
+        Args:
+            user (dict[str, Any]): User dictionary from authentication system.
+
+        Returns:
+            dict[str, Any]: Dictionary containing 'email', 'role', and 'is_first_time'.
+        """
         user_metadata = user["user_metadata"]
         data = {
             "email": user["email"],
@@ -32,7 +60,16 @@ class GetUser:
         }
         return data
 
-    async def _get_user_by_email(self, email: str) -> User:
+    async def _get_user_by_email(self, email: str) -> User | None:
+        """
+        Fetch a user from the database by email.
+
+        Args:
+            email (str): User's email address.
+
+        Returns:
+            User | None: User instance if found, None otherwise.
+        """
         user = await self.user_repo.find_by_email(email)
         if not user:
             return None

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from app.domain.models.bmodel import BModel
+from typing import Optional
 
 
 class Invitation:
@@ -7,11 +8,11 @@ class Invitation:
     Represents an invitation for a user to join a cohort.
 
     Attributes:
-        id (str): Unique identifier for the invitation (ObjectId).
+        id (str | None): Unique identifier for the invitation (ObjectId).
         full_name (str): Full name of the invited user (readonly).
-        email (str): Email of the invited user (readonly, validated for syntax).
+        email (str): Email of the invited user (readonly, validated).
         cohort (int): Cohort number (readonly).
-        log_state (bool): Indicates if the user could registrate correctly in the app.
+        log_state (bool): Indicates if the user successfully registered.
         created_at (datetime): UTC timestamp when the invitation was created (readonly).
         expires_at (datetime): UTC timestamp when the invitation expires.
     """
@@ -21,10 +22,10 @@ class Invitation:
         full_name: str,
         email: str,
         cohort: int,
-        id: str | None = None,
+        id: Optional[str] = None,
         log_state: bool = False,
-        created_at: datetime | None = None,
-        expires_at: datetime | None = None,
+        created_at: Optional[datetime] = None,
+        expires_at: Optional[datetime] = None,
     ):
         """
         Initialize a new Invitation instance.
@@ -33,13 +34,14 @@ class Invitation:
             full_name (str): Full name of the invited user.
             email (str): Email address of the invited user.
             cohort (int): Cohort number.
-            id (str|None): Identifier assigned by the database. Never set this value manually.
+            id (str | None): Identifier assigned by the database. Do not set manually.
             log_state (bool): Whether registration was completed.
-            created_at (datetime|None): Creation timestamp (UTC). Defaults to now UTC.
-            expires_at (datetime|None): Expiration timestamp (UTC). Defaults to created_at + 30 days.
+            created_at (datetime | None): Creation timestamp (UTC). Defaults to now.
+            expires_at (datetime | None): Expiration timestamp (UTC). Defaults to created_at + 30 days.
 
         Raises:
-            TypeError, ValueError: If any input is invalid.
+            TypeError: If input types are invalid.
+            ValueError: If values are out of allowed range or format.
         """
         self.__id = id
         self.__full_name = BModel.validate_string(full_name, "full_name")
@@ -49,9 +51,11 @@ class Invitation:
         self.__created_at = created_at or datetime.now()
         self.expires_at = expires_at
 
+    # -------------------- Properties -------------------- #
+
     @property
     def id(self):
-        """Return the invitation unique id."""
+        """Return the invitation's unique ID."""
         return self.__id
 
     @property
@@ -76,15 +80,16 @@ class Invitation:
 
     @property
     def created_at(self):
-        """Return creation timestamp (UTC)."""
+        """Return the creation timestamp (UTC)."""
         return self.__created_at
 
     @property
     def expires_at(self):
-        """Return expiration timestamp (UTC)."""
+        """Return the expiration timestamp (UTC)."""
         return self.__expires_at
 
-    # Setter for log if the user could registrate.
+    # -------------------- Setters -------------------- #
+
     @log_state.setter
     def log_state(self, value: bool):
         """
@@ -100,26 +105,42 @@ class Invitation:
         """
         Set the expiration date for the invitation.
 
-        If value is falsy (e.g. None), generate a default expires_at = now + 30 days.
+        If None, defaults to current time + 30 days.
+
+        Args:
+            value (datetime | None): Expiration timestamp.
+
+        Raises:
+            TypeError: If value is not a datetime.
+            ValueError: If expiration is before the creation date.
         """
         if not value:
             self.__expires_at = datetime.now() + timedelta(days=30)
             return
         if not isinstance(value, datetime):
-            raise TypeError(f"Expires at must be a valid date")
+            raise TypeError("expires_at must be a valid datetime")
         if value < self.created_at:
-            raise ValueError("Expiration date must be after the creation date")
+            raise ValueError("Expiration date must be after creation date")
 
         self.__expires_at = value
 
+    # -------------------- Methods -------------------- #
+
     def is_valid(self) -> bool:
-        """Check if invitation is valid (not expired)."""
+        """
+        Check if the invitation is still valid (not expired).
+
+        Returns:
+            bool: True if current time is before expiration.
+        """
         return datetime.now() <= self.expires_at
 
     def to_dict(self) -> dict:
         """
-        Serialize the Invitation to a dictionary.
-        Note: returns datetimes as datetime objects.
+        Serialize the Invitation instance to a dictionary.
+
+        Returns:
+            dict: Dictionary containing all attributes, including ID if present.
         """
         data = {
             "full_name": self.full_name,

@@ -10,10 +10,7 @@ from app.domain.models.cvinfo import CVInfo
 from app.infrastructure.supabase import supabase_client
 from app.domain.ports.supabase_storage_port import ISupabaseStorage
 from app.infrastructure.supabase.bucket_service import SupabaseStorageRepository
-from app.infrastructure.database.repositories.user_repository import (
-    UserRepository,
-)
-
+from app.infrastructure.database.repositories.user_repository import UserRepository
 from app.services.exceptions.register_user_exceptions import (
     InvalidFileType,
     FileTooLarge,
@@ -24,12 +21,35 @@ logger = get_logger(__name__)
 
 
 class UserProcessor:
+    """
+    Service class responsible for processing and creating a new user.
+
+    This class handles:
+        - Validation and storage of avatar images
+        - Creation of User objects
+        - Saving users to the database
+        - Updating user state in Supabase
+
+    Attributes:
+        user_repo (UserRepository): Repository for user data.
+        supabase_service: Supabase client for storage and authentication.
+        bucket_service (ISupabaseStorage): Service to upload files to Supabase storage.
+    """
+
     def __init__(
         self,
         user_repo: Optional[UserRepository] = None,
         supabase_service=None,
         bucket_service: Optional[ISupabaseStorage] = None,
     ):
+        """
+        Initialize the UserProcessor with optional custom repositories and services.
+
+        Args:
+            user_repo (Optional[UserRepository]): Custom user repository instance.
+            supabase_service: Optional Supabase client instance.
+            bucket_service (Optional[ISupabaseStorage]): Optional bucket service instance.
+        """
         self.user_repo = user_repo or UserRepository()
         self.supabase_service = supabase_service or supabase_client
         self.bucket_service = bucket_service or SupabaseStorageRepository()
@@ -42,7 +62,26 @@ class UserProcessor:
         email: str,
         cohort: int,
         github: Optional[str],
-    ):
+    ) -> str:
+        """
+        Process a new user: validate avatar, save image, create user object, and save to database.
+
+        Args:
+            cv_info (Dict[str, Any]): Parsed CV data as dictionary.
+            cv_info_data (CVInfo): Structured CV information object.
+            avatar_img (UploadFile): User's avatar image file.
+            email (str): Email of the user.
+            cohort (int): Cohort number for the user.
+            github (Optional[str]): GitHub username (optional).
+
+        Returns:
+            str: The ID of the newly created user.
+
+        Raises:
+            UserAlreadyExists: If a user with the given email already exists.
+            InvalidFileType: If the avatar image is not valid.
+            FileTooLarge: If the avatar image exceeds size limits.
+        """
         if await self.user_repo.user_email_exists(email):
             raise UserAlreadyExists(f"User with email {email} already registered")
 
@@ -68,13 +107,41 @@ class UserProcessor:
         return user_id
 
     async def _save_avatar_img(self, avatar_img: UploadFile) -> dict[str, str]:
+        """
+        Upload the user's avatar image to Supabase storage.
+
+        Args:
+            avatar_img (UploadFile): Avatar image file to upload.
+
+        Returns:
+            dict[str, str]: Dictionary containing the file URL and path.
+        """
         return await self.bucket_service.upload(avatar_img, "avatars")
 
     async def _save_user(self, new_user: User) -> str:
+        """
+        Save the User object to the database.
+
+        Args:
+            new_user (User): User instance to save.
+
+        Returns:
+            str: ID of the newly created user.
+        """
         user_id = await self.user_repo.create(new_user.to_dict())
         return user_id
 
     async def _validate_img(self, file: UploadFile):
+        """
+        Validate the uploaded image for type, size, and content integrity.
+
+        Args:
+            file (UploadFile): Image file to validate.
+
+        Raises:
+            InvalidFileType: If the file is not a valid image.
+            FileTooLarge: If the image exceeds the maximum allowed size.
+        """
         MAX_IMG_SIZE_BYTES = settings.max_img_size * 1024 * 1024
 
         if not file.content_type.startswith("image/"):
@@ -97,6 +164,15 @@ class UserProcessor:
             await file.seek(0)
 
     def _change_user_state(self, email: str):
+        """
+        Update the user state in Supabase to indicate that it is no longer the first login.
+
+        Args:
+            email (str): Email of the user to update.
+
+        Raises:
+            ValueError: If no user with the given email is found in Supabase.
+        """
         users = supabase_client.auth.admin.list_users()
         logger.info(f"Response supabase: {users}")
         target_user = next((u for u in users if u.email == email), None)

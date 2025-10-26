@@ -8,10 +8,33 @@ logger = get_logger(__name__)
 
 
 class GraduatesFilter:
+    """
+    Use case to filter graduates based on technologies, English level, and tutor feedback.
+
+    Attributes:
+        user_repo (UserRepository): Repository to access user data.
+    """
+
     def __init__(self, user_repo: Optional[UserRepository] = None):
+        """
+        Initialize the GraduatesFilter use case.
+
+        Args:
+            user_repo (UserRepository, optional): Custom user repository.
+                Defaults to standard UserRepository.
+        """
         self.user_repo = user_repo or UserRepository()
 
     async def process_filters(self, filters) -> list[dict[str, Any]]:
+        """
+        Process the filters and return a list of graduates matching the criteria.
+
+        Args:
+            filters: Object containing filtering criteria (technologies, English levels, tutors_feedback).
+
+        Returns:
+            list[dict[str, Any]]: List of graduates with serialized information.
+        """
         filters = self._payload_serialization(filters)
         query = self._build_mongo_filters(filters)
         data = await self._process_query(query)
@@ -19,6 +42,15 @@ class GraduatesFilter:
         return response
 
     def _payload_serialization(self, payload) -> dict[str, Any]:
+        """
+        Extract relevant fields from the incoming payload for filtering.
+
+        Args:
+            payload: Object containing the raw filter data.
+
+        Returns:
+            dict[str, Any]: Serialized filters containing 'technologies', 'english_levels', and 'feedbacks'.
+        """
         techs = payload.technologies
         english_levels = payload.english_levels
         feedbacks = payload.tutors_feedback
@@ -30,17 +62,26 @@ class GraduatesFilter:
         return filters
 
     def _build_mongo_filters(self, filters: dict[str, Any]) -> dict:
+        """
+        Build a MongoDB query dictionary based on the filters.
+
+        Args:
+            filters (dict[str, Any]): Serialized filters.
+
+        Returns:
+            dict: MongoDB query dictionary to filter graduates.
+        """
         query = {}
 
-        # Tecnologías
+        # Technologies
         if filters.get("technologies"):
             query["cv_info.skills"] = {"$all": filters["technologies"]}
 
-        # Nivel de inglés
+        # English levels
         if filters.get("english_levels"):
             query["cv_info.english_level"] = {"$in": filters["english_levels"]}
 
-        # Feedback de tutores
+        # Tutors feedback
         if filters.get("tutorsFeedback"):
             query["tutorsFeedback"] = {"$all": filters["tutorsFeedback"]}
 
@@ -49,6 +90,15 @@ class GraduatesFilter:
         return query
 
     async def _process_query(self, query: dict[str, Any]) -> list[User]:
+        """
+        Execute the database query and convert results to User instances.
+
+        Args:
+            query (dict[str, Any]): MongoDB query dictionary.
+
+        Returns:
+            list[User]: List of User model instances.
+        """
         result = await self.user_repo.find_all(query)
         logger.info(f"{result}")
         graduates_list = [User(**graduate) for graduate in result]
@@ -58,6 +108,15 @@ class GraduatesFilter:
     def _serialization_for_response(
         self, graduates_list: list[User]
     ) -> list[dict[str, Any]]:
+        """
+        Serialize a list of User instances into dictionaries suitable for API response.
+
+        Args:
+            graduates_list (list[User]): List of User model instances.
+
+        Returns:
+            list[dict[str, Any]]: List of serialized graduate dictionaries.
+        """
         response = []
         annotations = None
         general_feedback = None
