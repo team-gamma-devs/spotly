@@ -37,3 +37,11 @@ class GetUser:
             raise UserNotLoggedIn("User not found")
 
         return User(**user)
+
+    async def get_user_by_email(self, email: str) -> User:
+        user = await self.user_repo.find_by_email(email)
+
+        if user is None:
+            raise UserNotLoggedIn("User not found")
+
+        return User(**user)
