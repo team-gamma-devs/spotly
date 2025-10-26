@@ -152,6 +152,8 @@ class CSVInvitationProcessor:
                             f"Expired invitation for {invitation.email} replaced."
                         )
                 await self.invitation_repo.create(invitation.to_dict())
+
+                # Supabase UserPool fill.
                 logger.info(f"Invitation saved successfully for {invitation.email}")
                 response = supabase_client.auth.admin.create_user(
                     {
@@ -159,7 +161,7 @@ class CSVInvitationProcessor:
                         "email_confirm": True,
                         "user_metadata": {
                             "role": "graduate",
-                            "is_first_time": "true",
+                            "is_first_time": True,
                         },
                     }
                 )
