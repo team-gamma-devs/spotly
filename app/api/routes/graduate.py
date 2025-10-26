@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Request
 
 from app.logger import get_logger
+from app.api.decorators.jwt_validation import require_jwt
 from app.services.use_cases.get_user import GetUser
 from app.services.exceptions.user_login_exceptions import (
     UserNotLoggedIn,
@@ -15,9 +16,9 @@ router = APIRouter(
 
 
 @router.get("/", status_code=status.HTTP_200_OK)
+@require_jwt()
 async def get_user_data(request: Request):
-    # email = request.state.user.get("email")
-    email = "perfedefer@gmail.com"
+    email = request.state.user.get("email")
     get_user = GetUser()
 
     try:
