@@ -62,11 +62,9 @@ class RegisterUser:
             avatar_img,
             email=invitation.email,
             cohort=invitation.cohort,
+            github=github_username,
         )
         logger.info(f"User registered succesfully (id): {registered_user_id}")
-
-        if github_username:
-            pass
 
         return registered_user_id
 
