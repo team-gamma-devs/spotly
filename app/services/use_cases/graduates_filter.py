@@ -1,7 +1,10 @@
 from typing import Optional, Any
+import logging
 
 from app.domain.models.user import User
 from app.infrastructure.database.repositories.user_repository import UserRepository
+
+logger = logging.getLogger(__name__)
 
 
 class GraduatesFilter:
@@ -11,7 +14,7 @@ class GraduatesFilter:
     async def process_filters(self, filters) -> list[dict[str, Any]]:
         filters = self._payload_serialization(filters)
         query = self._build_mongo_filters(filters)
-        data = self._process_query(query)
+        data = await self._process_query(query)
         response = self._serialization_for_response(data)
         return response
 
@@ -35,46 +38,56 @@ class GraduatesFilter:
 
         # Nivel de inglés
         if filters.get("english_levels"):
-            query["cv_info.english_evel"] = {"$in": filters["english_levels"]}
+            query["cv_info.english_level"] = {"$in": filters["english_levels"]}
 
         # Feedback de tutores
         if filters.get("tutorsFeedback"):
             query["tutorsFeedback"] = {"$all": filters["tutorsFeedback"]}
 
+        logger.info(f"{query}")
+
         return query
 
     async def _process_query(self, query: dict[str, Any]) -> list[User]:
         result = await self.user_repo.find_all(query)
+        logger.info(f"{result}")
         graduates_list = [User(**graduate) for graduate in result]
+        logger.info(f"{[user.to_dict() for user in graduates_list]}")
         return graduates_list
 
     def _serialization_for_response(
         self, graduates_list: list[User]
     ) -> list[dict[str, Any]]:
         response = []
+        annotations = None
+        general_feedback = None
         for graduate in graduates_list:
-            annotations = [
-                feedback
-                for feedback in graduate.tutors_feedback
-                if feedback.get("annotations")
-            ]
+            if graduate.tutors_feedback:
+                annotations = [
+                    feedback
+                    for feedback in graduate.tutors_feedback
+                    if feedback.get("annotations")
+                ]
 
-            general_feedback = [
-                feedback
-                for feedback in graduate.tutors_feedback
-                if not feedback.get("annotations")
-            ]
+                general_feedback = [
+                    feedback
+                    for feedback in graduate.tutors_feedback
+                    if not feedback.get("annotations")
+                ]
+
             data = {
                 "id": graduate.id,
                 "first_name": graduate.first_name,
                 "last_name": graduate.last_name,
                 "email": graduate.email,
+                "cv_url": graduate.cv_info["personal_cv_url"],
                 "english_level": graduate.cv_info["english_level"],
                 "avatar_url": graduate.avatar_url,
                 "cohort": graduate.cohort,
                 "tech_stack": graduate.cv_info["skills"],
                 "github_url": graduate.github,
                 "linkedin_url": graduate.cv_info["linkedin_url"],
+                "created_at": graduate.created_at,
                 "updated_at": graduate.updated_at,
                 "annotations": annotations,
                 "tutors_feedback": general_feedback,
