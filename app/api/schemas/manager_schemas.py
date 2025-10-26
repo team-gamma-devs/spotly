@@ -67,6 +67,9 @@ class FilteredUsers(BaseModel):
         ...,
         description="User's email address. Must be a valid email format.",
     )
+    cv_url: AnyUrl = Field(
+        ..., alias="cvUrl", description="Public URL of the user's personal cv"
+    )
     english_level: Literal["basic", "intermediate", "advanced"] = Field(
         ..., alias="englishLevel", description="User's english level"
     )
@@ -94,19 +97,22 @@ class FilteredUsers(BaseModel):
         alias="linkedinUrl",
         description="User's LinkedIn profile URL.",
     )
+    annotations: Optional[Annotations] = Field(
+        None,
+        description="Metadata or comments associated with the user.",
+    )
+    tutors_feedback: Optional[list[dict]] = Field(
+        None,
+        alias="tutorsFeedback",
+        description="Dictionary containing tutor feedback data for the user.",
+    )
+    created_at: datetime = Field(
+        ..., alias="createdAt", description="Timestamp of the user creation date"
+    )
     updated_at: datetime = Field(
         ...,
         alias="updatedAt",
-        description="Timestamp of the last user data update (ISO 8601 format).",
-    )
-    annotations: Annotations = Field(
-        ...,
-        description="Metadata or comments associated with the user.",
-    )
-    tutors_feedback: dict = Field(
-        ...,
-        alias="tutorsFeedback",
-        description="Dictionary containing tutor feedback data for the user.",
+        description="Timestamp of the last user data update",
     )
 
     class Config:
