@@ -22,7 +22,7 @@ class SupabaseStorageRepository(ISupabaseStorage):
 
         file_data = {
             "file_url": self.client.storage.from_(self.bucket).get_public_url(path),
-            "file_path": str(result.path),
+            "file_path": "/" + "/".join(result.path),
         }
         return file_data
 
