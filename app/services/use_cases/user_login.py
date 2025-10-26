@@ -57,6 +57,7 @@ class UserLogin:
             InvitationExpired: If the invitation for a non-registered email has expired.
         """
         user = await self._verify_user(email)
+        logger.info(f"user: {user}")
         if not user:
             await self._verify_invitation(email)
 
@@ -99,15 +100,13 @@ class UserLogin:
         """
         invitation_data = await self.invitation_repo.find_by_email(email)
         if not invitation_data:
-            return None
-
-        invitation = Invitation(**invitation_data)
-        if not invitation:
             logger.warning(f"User {email} attempted to login but is not invited")
             raise InvitationNotFound(
                 "Your email is not associated with a registered user or any invitation. Please contact the Holberton staff."
             )
 
+        logger.info(f"invitation_data: {invitation_data}")
+        invitation = Invitation(**invitation_data)
         if not invitation.is_valid():
             logger.warning(f"User {email} was invited but the invitation has expired")
             raise InvitationExpired(
