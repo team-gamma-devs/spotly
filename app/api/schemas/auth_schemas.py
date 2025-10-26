@@ -7,17 +7,18 @@ class LoginRequest(BaseModel):
     email: EmailStr
 
 
-class UserResponse(BaseModel):
-    id: str
-    first_name: str = Field(..., alias="firstName")
-    last_name: str = Field(..., alias="lastName")
+class UserMe(BaseModel):
+    id: Optional[str] = None
+    first_name: Optional[str] = Field(None, alias="firstName")
+    last_name: Optional[str] = Field(None, alias="lastName")
     email: EmailStr
-    avatar_url: str = Field(..., alias="avatarUrl")
+    avatar_url: Optional[str] = Field(None, alias="avatarUrl")
     cohort: Optional[int] = None
     github: Optional[str] = None
     role: str
-    created_at: datetime = Field(..., alias="createdAt")
-    updated_at: datetime = Field(..., alias="updatedAt")
+    is_first_time: bool = Field(..., alias="isFirstTime")
+    created_at: datetime = Field(None, alias="createdAt")
+    updated_at: datetime = Field(None, alias="updatedAt")
 
     class Config:
         populate_by_name = True

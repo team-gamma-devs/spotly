@@ -3,6 +3,7 @@ from fastapi import File, Form
 from typing import Optional
 
 from app.logger import get_logger
+from app.api.decorators.jwt_validation import require_jwt
 from app.services.use_cases.register_user.register_user import RegisterUser
 from app.services.exceptions.register_user_exceptions import (
     FileTooLarge,
@@ -19,8 +20,8 @@ router = APIRouter(
 )
 
 
-# @require_jwt()
 @router.post("/", status_code=status.HTTP_201_CREATED)
+@require_jwt()
 async def sign_up(
     request: Request,
     github_username: Optional[str] = Form(None),
@@ -29,7 +30,6 @@ async def sign_up(
     avatar_img: UploadFile = File(...),
 ):
     email = request.state.user.get("email")
-
     register_user = RegisterUser()
     try:
         registered_user = await register_user.register_user(

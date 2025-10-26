@@ -47,8 +47,8 @@ router = APIRouter(
 )
 
 
-# @require_jwt(for_manager=True)
 @router.post("/uploadCSV", status_code=status.HTTP_202_ACCEPTED)
+@require_jwt(for_manager=True)
 async def upload_csv(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
     MAX_CSV_SIZE_BYTES = settings.max_csv_size * 1024 * 1024
 
@@ -82,22 +82,22 @@ async def upload_csv(background_tasks: BackgroundTasks, file: UploadFile = File(
     return {"message": "Invitations generated successfully"}
 
 
-# @require_jwt(for_manager=True)
 @router.get(
     "/filters", response_model=FiltersListResponse, status_code=status.HTTP_200_OK
 )
+@require_jwt(for_manager=True)
 async def get_filters():
     filters = GetFilters()
     return {"filters": await filters.get_available_filters()}
 
 
-# @require_jwt(for_manager=True)
 @router.post(
     "/search_graduates",
     response_model=list[FilteredUsers],
     response_model_by_alias=True,
     status_code=status.HTTP_200_OK,
 )
+@require_jwt(for_manager=True)
 async def search_graduates(payload: FiltersPayload = Body(...)):
     filters_processor = GraduatesFilter()
     result = await filters_processor.process_filters(payload)
@@ -105,8 +105,8 @@ async def search_graduates(payload: FiltersPayload = Body(...)):
     return result
 
 
-# @require_jwt(for_manager=True)
 @router.post("/feedback", status_code=status.HTTP_201_CREATED)
+@require_jwt(for_manager=True)
 async def tutors_feedback():
     pass
 
@@ -118,16 +118,17 @@ async def tutors_feedback():
 ##############################################################
 
 
-# @require_jwt(for_manager=True)
+#
 @router.post("/invitations", status_code=status.HTTP_200_OK)
+@require_jwt(for_manager=True)
 async def filter_invitations(payload=Body(None)):
     get_inv = GetInvitations()
     invitations = await get_inv.get_all_invitations()
     return invitations
 
 
-# @require_jwt(for_manager=True)
 @router.delete("/invitation/{invitation_id}", status_code=status.HTTP_204_NO_CONTENT)
+@require_jwt(for_manager=True)
 async def delete_invitation(invitation_id: str):
     invitation_delete = DeleteInvitation()
     try:
