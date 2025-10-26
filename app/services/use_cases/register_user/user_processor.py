@@ -7,7 +7,9 @@ import logging
 from app.settings import settings
 from app.domain.models.user import User
 from app.domain.models.cvinfo import CVInfo
+from app.infrastructure.supabase import supabase_client
 from app.domain.ports.supabase_storage_port import ISupabaseStorage
+from app.infrastructure.supabase.bucket_service import SupabaseStorageRepository
 from app.infrastructure.database.repositories.user_repository import (
     UserRepository,
 )
@@ -15,6 +17,7 @@ from app.infrastructure.database.repositories.user_repository import (
 from app.services.exceptions.register_user_exceptions import (
     InvalidFileType,
     FileTooLarge,
+    UserAlreadyExists,
 )
 
 logger = logging.getLogger(__name__)
@@ -24,10 +27,12 @@ class UserProcessor:
     def __init__(
         self,
         user_repo: Optional[UserRepository] = None,
+        supabase_service=None,
         bucket_service: Optional[ISupabaseStorage] = None,
     ):
         self.user_repo = user_repo or UserRepository()
-        self.bucket_service = bucket_service
+        self.supabase_service = supabase_service or supabase_client
+        self.bucket_service = bucket_service or SupabaseStorageRepository()
 
     async def process_user(
         self,
@@ -36,10 +41,10 @@ class UserProcessor:
         avatar_img: UploadFile,
         email: str,
         cohort: int,
-        github: str,
+        github: Optional[str],
     ):
         if await self.user_repo.user_email_exists(email):
-            raise Exception(f"User with email {email} already registered")
+            raise UserAlreadyExists(f"User with email {email} already registered")
 
         await self._validate_img(avatar_img)
         avatar_img_url = await self._save_avatar_img(avatar_img)
@@ -50,14 +55,16 @@ class UserProcessor:
             "avatar_url": avatar_img_url["file_url"],
             "avatar_path": avatar_img_url["file_path"],
             "cohort": cohort,
-            "cv_info": cv_info_data,
+            "cv_info": cv_info_data.to_dict(),
         }
 
         if github:
-            user_data["github"] = github
+            user_data["github"] = f"https://github.com/{github}"
 
         new_user = User(**user_data)
         user_id = await self._save_user(new_user)
+
+        self._change_user_state(email)
         return user_id
 
     async def _save_avatar_img(self, avatar_img: UploadFile) -> dict[str, str]:
@@ -88,3 +95,15 @@ class UserProcessor:
             raise InvalidFileType(f"{file.filename} is not a valid image")
         finally:
             await file.seek(0)
+
+    def _change_user_state(self, email: str):
+        users = supabase_client.auth.admin.list_users()
+        logger.info(f"Response supabase: {users}")
+        target_user = next((u for u in users if u.email == email), None)
+
+        if not target_user:
+            raise ValueError(f"User with email {email} not found")
+
+        supabase_client.auth.admin.update_user_by_id(
+            target_user.id, attributes={"user_metadata": {"is_first_time": False}}
+        )
