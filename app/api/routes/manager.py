@@ -1,5 +1,13 @@
 # Dependencies
-from fastapi import APIRouter, File, UploadFile, HTTPException, BackgroundTasks, status
+from fastapi import (
+    APIRouter,
+    File,
+    UploadFile,
+    HTTPException,
+    BackgroundTasks,
+    status,
+    Body,
+)
 
 # General Config
 from app.settings import settings
@@ -10,7 +18,11 @@ from app.services.use_cases.get_filters import GetFilters
 from app.services.use_cases.graduates_filter import GraduatesFilter
 
 # Schemas
-from app.api.schemas.manager_schemas import FiltersListResponse, FiltersPayload
+from app.api.schemas.manager_schemas import (
+    FiltersListResponse,
+    FiltersPayload,
+    FilteredUsers,
+)
 
 # Personalized Exceptions
 from app.services.exceptions.csv_invitation_exceptions import (
@@ -79,10 +91,15 @@ async def get_filters():
 
 
 # @require_jwt(for_manager=True)
-@router.post("/search_graduates", status_code=status.HTTP_200_OK)
-async def search_graduates(filters: FiltersPayload):
+@router.post(
+    "/search_graduates",
+    response_model=FilteredUsers,
+    response_model_by_alias=True,
+    status_code=status.HTTP_200_OK,
+)
+async def search_graduates(payload: FiltersPayload = Body(...)):
     filters_processor = GraduatesFilter()
-    result = await filters_processor.process_filters(filters)
+    result = await filters_processor.process_filters(payload)
     return result
 
 
