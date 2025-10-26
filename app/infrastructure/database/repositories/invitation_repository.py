@@ -21,15 +21,6 @@ class InvitationRepository(BaseRepository):
         collection = self.db["invitations"]
         super().__init__(collection)
 
-    async def find_by_token(self, token: str) -> Optional[Dict[str, Any]]:
-        """Find invitation by token."""
-        try:
-            doc = await self.find_one({"token": token})
-            return doc
-        except Exception as e:
-            logger.exception(f"Error parsing invitation by token {token}: {e}")
-            return None
-
     async def find_by_email(self, email: str) -> Optional[Dict[str, Any]]:
         """Find invitation by email."""
         try:
@@ -42,3 +33,9 @@ class InvitationRepository(BaseRepository):
     async def find_by_state(self, state: bool) -> List[Dict[str, Any]]:
         """Find all invitations by state."""
         return await self.find_all({"log_state": "False"})
+
+    async def get_all_invitations(
+        self, skip: int = 0, limit: int = 50
+    ) -> List[dict[str, Any]]:
+        invitations = await self.find_all({}, skip, limit)
+        return invitations
