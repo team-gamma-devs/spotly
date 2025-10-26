@@ -46,7 +46,9 @@ class CVProcessor:
                 personal_cv_text, CVInfoSchema, self.system_prompt, self.user_prompt
             )
         else:
-            personal_cv_parsed = await self._parse_pdf_file(personal_cv)
+            personal_cv_parsed = await self._parse_pdf_file(
+                personal_cv, CVInfoSchema, self.system_prompt, self.user_prompt
+            )
 
         linkedin_cv_parsed = None
         if linkedin_cv_text:
@@ -54,6 +56,7 @@ class CVProcessor:
             linkedin_cv_parsed = await self._parse_pdf_text(
                 personal_cv_text, CVInfoSchema, self.system_prompt, self.user_prompt
             )
+            logger.info(f"Extracted fields: {linkedin_cv_parsed}")
         else:
             raise InvalidCV("The provided LinkedIn CV file is corrupted")
 
@@ -65,7 +68,7 @@ class CVProcessor:
             "last_name": personal_cv_parsed.last_name,
             "skills": list(set(personal_cv_parsed.skills + linkedin_cv_parsed.skills)),
             "english_level": personal_cv_parsed.english_level,
-            "linkedin_url": linkedin_cv_parsed.linkedin_url,
+            "linkedin_url": self._extract_linkedin_url(linkedin_cv_text),
             "works_in_it": personal_cv_parsed.works_in_it,
         }
 
@@ -148,3 +151,14 @@ class CVProcessor:
         )
         file.file.seek(0)
         return parsed_cv
+
+    def _extract_linkedin_url(self, text: str) -> str:
+        linkedin_pattern = r"(https?://)?(www\.)?linkedin\.com/in/([a-zA-Z0-9\-_]+(?:\n?[a-zA-Z0-9\-_]+)*)"
+        result = re.search(linkedin_pattern, text)
+        if not result:
+            raise InvalidCV("Linkedin cv must have a pofile URL")
+
+        url = result.group().replace("\n", "")
+        if not url.startswith("https://"):
+            url = "https://" + url
+        return url
