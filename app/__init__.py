@@ -1,7 +1,5 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse
 
 
 from app.settings import settings
@@ -12,6 +10,7 @@ from app.infrastructure.database.lifespan import lifespan
 from app.api.middlewares.request_logging import log_requests_middleware
 from app.api.middlewares.signature import verify_signature_and_origin
 from app.api.middlewares.global_exceptions import global_exceptions_middleware
+from app.api.middlewares.trusted_hosts import ConditionalTrustedHostMiddleware
 
 setup_logging()
 logger = get_logger(__name__)
@@ -38,7 +37,9 @@ def create_app() -> FastAPI:
     # ============================================
 
     # 1. Trusted Host Middleware (security)
-    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
+    app.add_middleware(
+        ConditionalTrustedHostMiddleware, allowed_hosts=settings.allowed_hosts
+    )
 
     # 2. CORS Middleware
     app.add_middleware(
