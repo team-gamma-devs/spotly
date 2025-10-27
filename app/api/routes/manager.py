@@ -7,6 +7,7 @@ from fastapi import (
     BackgroundTasks,
     status,
     Body,
+    Request,
 )
 
 
@@ -49,7 +50,9 @@ router = APIRouter(
 
 @router.post("/uploadCSV", status_code=status.HTTP_202_ACCEPTED)
 @require_jwt(for_manager=True)
-async def upload_csv(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+async def upload_csv(
+    request: Request, background_tasks: BackgroundTasks, file: UploadFile = File(...)
+):
     MAX_CSV_SIZE_BYTES = settings.max_csv_size * 1024 * 1024
 
     if not file.filename.endswith(".csv"):
@@ -86,7 +89,7 @@ async def upload_csv(background_tasks: BackgroundTasks, file: UploadFile = File(
     "/filters", response_model=FiltersListResponse, status_code=status.HTTP_200_OK
 )
 @require_jwt(for_manager=True)
-async def get_filters():
+async def get_filters(request: Request):
     filters = GetFilters()
     return {"filters": await filters.get_available_filters()}
 
@@ -105,9 +108,16 @@ async def search_graduates(payload: FiltersPayload = Body(...)):
     return result
 
 
+##############################################################
+##                                                           #
+##                       FEEDBACK                            #
+##                                                           #
+##############################################################
+
+
 @router.post("/feedback", status_code=status.HTTP_201_CREATED)
 @require_jwt(for_manager=True)
-async def tutors_feedback():
+async def tutors_feedback(request: Request):
     pass
 
 
@@ -118,10 +128,9 @@ async def tutors_feedback():
 ##############################################################
 
 
-#
 @router.post("/invitations", status_code=status.HTTP_200_OK)
 @require_jwt(for_manager=True)
-async def filter_invitations(payload=Body(None)):
+async def filter_invitations(request: Request, payload=Body(None)):
     get_inv = GetInvitations()
     invitations = await get_inv.get_all_invitations()
     return invitations
@@ -129,7 +138,7 @@ async def filter_invitations(payload=Body(None)):
 
 @router.delete("/invitation/{invitation_id}", status_code=status.HTTP_204_NO_CONTENT)
 @require_jwt(for_manager=True)
-async def delete_invitation(invitation_id: str):
+async def delete_invitation(request: Request, invitation_id: str):
     invitation_delete = DeleteInvitation()
     try:
         await invitation_delete.delete(invitation_id)
