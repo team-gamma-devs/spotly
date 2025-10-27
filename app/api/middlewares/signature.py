@@ -11,6 +11,13 @@ from app.settings import settings
 logger = get_logger(__name__)
 
 
+PUBLIC_ROUTES = [
+    "/health",
+    "/health/ready",
+    "/health/live",
+]
+
+
 async def verify_signature_and_origin(request: Request, call_next):
     """
     Middleware to verify request authenticity by checking the origin and HMAC signature.
@@ -20,7 +27,11 @@ async def verify_signature_and_origin(request: Request, call_next):
         2. Verify that the request includes a valid HMAC signature (X-Signature) based on the payload and timestamp.
         3. Optional: Prevent replay attacks by validating that the timestamp is recent (within 5 minutes).
 
+    Public routes (excluded from verification):
+        - Health check endpoints (/health, etc.)
+
     Steps:
+        - Check if route is public; if so, skip verification.
         - Extract headers: X-Frontend-Origin, X-Signature, and X-Timestamp.
         - Validate origin matches expected frontend.
         - Ensure signature and timestamp are present.
@@ -37,6 +48,11 @@ async def verify_signature_and_origin(request: Request, call_next):
         - Assumes frontend_secret is configured in settings.
         - Logs all failed attempts with relevant IP and path information.
     """
+    # Skip verification for public routes
+    if request.url.path in PUBLIC_ROUTES:
+        response = await call_next(request)
+        return response
+
     frontend_secret = settings.frontend_secret
 
     # Get signature, origin and message from headers
