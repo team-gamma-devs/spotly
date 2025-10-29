@@ -21,12 +21,15 @@ from app.services.use_cases.get_filters import GetFilters
 from app.services.use_cases.get_invitations import GetInvitations
 from app.services.use_cases.graduates_filter import GraduatesFilter
 from app.services.use_cases.delete_invitation import DeleteInvitation
+from app.services.use_cases.post_feedback import PostFeedback
+from app.services.use_cases.delete_feedback import DeleteFeedback
 
 # Schemas
 from app.api.schemas.manager_schemas import (
     FiltersListResponse,
     FiltersPayload,
     FilteredUsers,
+    FeedbackSchema,
 )
 
 # Personalized Exceptions
@@ -35,6 +38,7 @@ from app.services.exceptions.csv_invitation_exceptions import (
     MissingColumnsException,
 )
 from app.services.exceptions.delete_user_exceptions import DeleteError
+from app.services.exceptions.post_feedback_exceptions import InvalidFeedback
 
 # JWT Verify Decorator
 from app.api.decorators.jwt_validation import require_jwt
@@ -49,7 +53,7 @@ router = APIRouter(
 
 
 @router.post("/uploadCSV", status_code=status.HTTP_202_ACCEPTED)
-@require_jwt(for_manager=True)
+# @require_jwt(for_manager=True)
 async def upload_csv(
     request: Request, background_tasks: BackgroundTasks, file: UploadFile = File(...)
 ):
@@ -117,8 +121,24 @@ async def search_graduates(payload: FiltersPayload = Body(...)):
 
 @router.post("/feedback", status_code=status.HTTP_201_CREATED)
 @require_jwt(for_manager=True)
-async def tutors_feedback(request: Request):
-    pass
+async def tutors_feedback(request: Request, payload: FeedbackSchema = Body(...)):
+    save_feedback = PostFeedback()
+    try:
+        save_feedback.save_feedback(payload, request.state.user)
+    except InvalidFeedback as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    return {"message": "Feedback created successfully"}
+
+
+@router.delete("/feedback", status_code=status.HTTP_204_NO_CONTENT)
+@require_jwt(for_manager=True)
+async def delete_feedback(request: Request, payload):
+    feedback_delete = DeleteFeedback()
+    try:
+        await feedback_delete.delete(payload)
+    except DeleteError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 ##############################################################
