@@ -51,7 +51,7 @@ def create_app() -> FastAPI:
     )
 
     app.middleware("http")(log_requests_middleware)
-    # app.middleware("http")(verify_signature_and_origin)
+    app.middleware("http")(verify_signature_and_origin)
 
     # GLOBAL EXCEPTION HANDLERS
     app.middleware("http")(global_exceptions_middleware)

@@ -17,6 +17,13 @@ PUBLIC_ROUTES = [
     "/health/live",
 ]
 
+# Documentation routes that should be accessible without signature
+DOCS_ROUTES = [
+    "/docs",
+    "/redoc",
+    "/openapi.json",
+]
+
 
 async def verify_signature_and_origin(request: Request, call_next):
     """
@@ -29,9 +36,11 @@ async def verify_signature_and_origin(request: Request, call_next):
 
     Public routes (excluded from verification):
         - Health check endpoints (/health, etc.)
+        - Documentation endpoints (/docs, /redoc, /openapi.json) - for local development
 
     Steps:
         - Check if route is public; if so, skip verification.
+        - Check if route is documentation endpoint; if so, skip verification.
         - Extract headers: X-Frontend-Origin, X-Signature, and X-Timestamp.
         - Validate origin matches expected frontend.
         - Ensure signature and timestamp are present.
@@ -50,6 +59,16 @@ async def verify_signature_and_origin(request: Request, call_next):
     """
     # Skip verification for public routes
     if request.url.path in PUBLIC_ROUTES:
+        response = await call_next(request)
+        return response
+
+    # Skip verification for documentation routes (allows accessing docs from localhost) but does require signature for other requests like svelte server
+    # This is so I can access API docuemntation freely from the browser but still need to provide the signature for all other requests.
+    if (
+        request.url.path in DOCS_ROUTES
+        or request.url.path.startswith("/docs")
+        or request.url.path.startswith("/redoc")
+    ):
         response = await call_next(request)
         return response
 
