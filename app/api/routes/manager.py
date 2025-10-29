@@ -107,12 +107,13 @@ async def get_filters(request: Request):
 )
 @require_jwt(for_manager=True)
 async def search_graduates(
+    request: Request,
     payload: FiltersPayload = Body(...),
     page: int = Query(1, ge=1, description="Page number starting in 1"),
     pageSize: int = Query(20, ge=1, le=100, description="Number of items per page"),
 ):
     filters_processor = GraduatesFilter()
-    result = await filters_processor.process_filters(payload)
+    result = await filters_processor.process_filters(payload, page, pageSize)
     logger.info(f"{result}")
     return result
 

@@ -1,4 +1,5 @@
 from typing import Optional, Any
+import math
 
 from app.logger import get_logger
 from app.domain.models.user import User
@@ -38,10 +39,18 @@ class GraduatesFilter:
         filters = self._payload_serialization(filters)
         query = self._build_mongo_filters(filters)
         data = await self._process_query(query)
-        response = self._serialization_for_response(data)
+        serialization = self._serialization_for_response(data["graduates_list"])
+        response = {
+            "items": serialization,
+            "pages": data["pages"],
+            "page": data["page"],
+            "limit": data["limit"],
+        }
         return response
 
-    def _payload_serialization(self, payload) -> dict[str, Any]:
+    def _payload_serialization(
+        self, payload, page: int, page_size: int
+    ) -> dict[str, Any]:
         """
         Extract relevant fields from the incoming payload for filtering.
 
@@ -53,7 +62,8 @@ class GraduatesFilter:
         """
         techs = payload.technologies
         english_levels = [
-            english_level.capitalize() for english_level in payload.english_levels
+            english_level.capitalize()
+            for english_level in (payload.english_levels or [])
         ]
         feedbacks = payload.tutors_feedback
         filters = {}
@@ -96,7 +106,9 @@ class GraduatesFilter:
 
         return query
 
-    async def _process_query(self, query: dict[str, Any]) -> list[User]:
+    async def _process_query(
+        self, query: dict[str, Any], skip: int = 0, limit: int = 20
+    ) -> list[User]:
         """
         Execute the database query and convert results to User instances.
 
@@ -106,11 +118,18 @@ class GraduatesFilter:
         Returns:
             list[User]: List of User model instances.
         """
-        result = await self.user_repo.find_all(query)
+        result = await self.user_repo.find_all(query, skip, limit)
+        pages = math.ceil(await self.user_repo.count(query) / limit)
         logger.info(f"{result}")
         graduates_list = [User(**graduate) for graduate in result]
         logger.info(f"{[user.to_dict() for user in graduates_list]}")
-        return graduates_list
+        data = {
+            "graduates_list": graduates_list,
+            "pages": pages,
+            "page": (skip // limit) + 1,
+            "limit": limit,
+        }
+        return data
 
     def _serialization_for_response(
         self, graduates_list: list[User]

@@ -98,7 +98,7 @@ class FilteredUsers(BaseModel):
         None,
         description="Metadata or comments associated with the user.",
     )
-    tutors_feedback: Optional[list[dict]] = Field(
+    tutors_feedback: Optional[dict[str, dict]] = Field(
         None,
         alias="tutorsFeedback",
         description="Dictionary containing tutor feedback data for the user.",
