@@ -23,7 +23,7 @@ class FiltersPayload(BaseModel):
     tutors_feedback: Optional[list[str]] = Field(
         None,
         alias="tutorsFeedback",
-        description="Tutors name feedbacks that graduate must have",
+        description="Tutors id's feedbacks that graduate must have",
     )
 
     class Config:
@@ -67,10 +67,7 @@ class FilteredUsers(BaseModel):
         ...,
         description="User's email address. Must be a valid email format.",
     )
-    cv_url: AnyUrl = Field(
-        ..., alias="cvUrl", description="Public URL of the user's personal cv"
-    )
-    english_level: Literal["basic", "intermediate", "advanced"] = Field(
+    english_level: str = Field(
         ..., alias="englishLevel", description="User's english level"
     )
     avatar_url: AnyUrl = Field(
@@ -97,7 +94,7 @@ class FilteredUsers(BaseModel):
         alias="linkedinUrl",
         description="User's LinkedIn profile URL.",
     )
-    annotations: Optional[Annotations] = Field(
+    annotations: Optional[list[Annotations]] = Field(
         None,
         description="Metadata or comments associated with the user.",
     )
@@ -105,6 +102,9 @@ class FilteredUsers(BaseModel):
         None,
         alias="tutorsFeedback",
         description="Dictionary containing tutor feedback data for the user.",
+    )
+    works_in_it: bool = Field(
+        ..., alias="worksInIt", description="Bool that defines if graduate works in it"
     )
     created_at: datetime = Field(
         ..., alias="createdAt", description="Timestamp of the user creation date"
@@ -114,6 +114,17 @@ class FilteredUsers(BaseModel):
         alias="updatedAt",
         description="Timestamp of the last user data update",
     )
+
+    class Config:
+        populate_by_name = True
+        validate_by_name = True
+
+
+class FeedbackSchema(BaseModel):
+    graduated_id: str = Field(..., alias="graduatedId")
+    message: Optional[str]
+    technical_score: Optional[str] = Field(None, alias="technicalScore")
+    professional_score: Optional[str] = Field(None, alias="professionalScore")
 
     class Config:
         populate_by_name = True
