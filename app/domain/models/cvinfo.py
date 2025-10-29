@@ -87,11 +87,14 @@ class CVInfo:
         self.__linkedin_url = BModel.validate_url(value, "linkedin_cv")
 
     @english_level.setter
-    def english_level(self, value: Literal["basic", "intermediate", "advanced"]):
+    def english_level(self, value: str):
         """Validate and set English proficiency level."""
+        value = BModel.validate_string(value, "English level")
+        value = value.lower()
         VALID_ENGLISH_LEVELS = ["basic", "intermediate", "advanced"]
         if value not in VALID_ENGLISH_LEVELS:
             raise Exception("Invalid English Level")
+        value = value.capitalize()
         self.__english_level = value
 
     @skills.setter
