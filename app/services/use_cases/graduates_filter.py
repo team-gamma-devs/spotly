@@ -52,13 +52,20 @@ class GraduatesFilter:
             dict[str, Any]: Serialized filters containing 'technologies', 'english_levels', and 'feedbacks'.
         """
         techs = payload.technologies
-        english_levels = payload.english_levels
+        english_levels = [
+            english_level.capitalize() for english_level in payload.english_levels
+        ]
         feedbacks = payload.tutors_feedback
-        filters = {
-            "technologies": techs,
-            "feedbacks": feedbacks,
-            "english_levels": english_levels,
-        }
+        filters = {}
+        if english_levels:
+            filters["english_levels"] = english_levels
+
+        if techs:
+            filters["technologies"] = techs
+
+        if feedbacks:
+            filters["feedbacks"] = feedbacks
+
         return filters
 
     def _build_mongo_filters(self, filters: dict[str, Any]) -> dict:
@@ -83,7 +90,7 @@ class GraduatesFilter:
 
         # Tutors feedback
         if filters.get("tutorsFeedback"):
-            query["tutorsFeedback"] = {"$all": filters["tutorsFeedback"]}
+            query["tutorsFeedback.tutor_id"] = {"$all": filters["tutorsFeedback"]}
 
         logger.info(f"{query}")
 
@@ -118,8 +125,8 @@ class GraduatesFilter:
             list[dict[str, Any]]: List of serialized graduate dictionaries.
         """
         response = []
-        annotations = None
-        general_feedback = None
+        annotations = []
+        general_feedback = {}
         for graduate in graduates_list:
             if graduate.tutors_feedback:
                 annotations = [
@@ -128,11 +135,17 @@ class GraduatesFilter:
                     if feedback.get("annotations")
                 ]
 
-                general_feedback = [
-                    feedback
+                general_feedback = {
+                    feedback["id"]: {
+                        "tutor_id": feedback["tutor_id"],
+                        "created_at": feedback["created_at"],
+                        "professional_score": feedback["professional_score"],
+                        "technical_score": feedback["technical_score"],
+                        "tutor_name": feedback["tutor_name"],
+                    }
                     for feedback in graduate.tutors_feedback
                     if not feedback.get("annotations")
-                ]
+                }
 
             data = {
                 "id": graduate.id,
@@ -144,11 +157,12 @@ class GraduatesFilter:
                 "avatar_url": graduate.avatar_url,
                 "cohort": graduate.cohort,
                 "tech_stack": graduate.cv_info["skills"],
-                "github_url": graduate.github,
+                "github_url": graduate.github if graduate.github else "",
                 "linkedin_url": graduate.cv_info["linkedin_url"],
                 "created_at": graduate.created_at,
                 "updated_at": graduate.updated_at,
                 "annotations": annotations,
+                "works_in_it": graduate.cv_info["works_in_it"],
                 "tutors_feedback": general_feedback,
             }
             response.append(data)
