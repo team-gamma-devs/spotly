@@ -11,18 +11,16 @@ class TutorFeedback:
     def __init__(
         self,
         tutor_id: str,
+        tutor_name: str,
         id: Optional[str] = None,
-        professional_score: Optional[
-            Literal["poor", "average", "very good", "excellent"]
-        ] = None,
-        technical_score: Optional[
-            Literal["poor", "average", "very good", "excellent"]
-        ] = None,
+        professional_score: Optional[str] = None,
+        technical_score: Optional[str] = None,
         annotation: Optional[str] = None,
         created_at: Optional[datetime] = None,
     ):
         self.__id = id or uuid.uuid4()
-        self.__tutor_id = BModel.validate_id(tutor_id)
+        self.__tutor_id = BModel.validate_id(tutor_id, "tutor_id")
+        self.__tutor_name = BModel.validate_string(tutor_name, "tutor_name")
         self.professional_score = professional_score
         self.technical_score = technical_score
         self.annotation = annotation
@@ -35,6 +33,10 @@ class TutorFeedback:
     @property
     def tutor_id(self):
         return self.__tutor_id
+
+    @property
+    def tutor_name(self):
+        return self.__tutor_name
 
     @property
     def professional_score(self):
@@ -100,6 +102,7 @@ class TutorFeedback:
         data = {
             "id": self.id,
             "tutor_id": self.tutor_id,
+            "tutor_name": self.tutor_name,
             "created_at": self.created_at,
         }
 
