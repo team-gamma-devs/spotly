@@ -120,6 +120,13 @@ class FilteredUsers(BaseModel):
         validate_by_name = True
 
 
+class FilteredUsersResponse(BaseModel):
+    items: list[FilteredUsers]
+    pages: int
+    page: int
+    limit: int
+
+
 class FeedbackSchema(BaseModel):
     graduated_id: str = Field(..., alias="graduatedId")
     message: Optional[str]

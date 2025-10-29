@@ -8,6 +8,7 @@ from fastapi import (
     status,
     Body,
     Request,
+    Query,
 )
 
 
@@ -28,7 +29,7 @@ from app.services.use_cases.delete_feedback import DeleteFeedback
 from app.api.schemas.manager_schemas import (
     FiltersListResponse,
     FiltersPayload,
-    FilteredUsers,
+    FilteredUsersResponse,
     FeedbackSchema,
 )
 
@@ -100,12 +101,16 @@ async def get_filters(request: Request):
 
 @router.post(
     "/search_graduates",
-    response_model=list[FilteredUsers],
+    response_model=FilteredUsersResponse,
     response_model_by_alias=True,
     status_code=status.HTTP_200_OK,
 )
 @require_jwt(for_manager=True)
-async def search_graduates(payload: FiltersPayload = Body(...)):
+async def search_graduates(
+    payload: FiltersPayload = Body(...),
+    page: int = Query(1, ge=1, description="Page number starting in 1"),
+    pageSize: int = Query(20, ge=1, le=100, description="Number of items per page"),
+):
     filters_processor = GraduatesFilter()
     result = await filters_processor.process_filters(payload)
     logger.info(f"{result}")
