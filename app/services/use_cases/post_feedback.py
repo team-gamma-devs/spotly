@@ -30,7 +30,7 @@ class PostFeedback:
         """
         self.user_repo = user_repo or UserRepository()
 
-    async def save_feedback(self, data: dict[str, Any]):
+    async def save_feedback(self, data: dict[str, Any], user: dict[str, Any]):
         """
         Save a tutor feedback entry for a specific graduate.
 
@@ -41,12 +41,13 @@ class PostFeedback:
             InvalidFeedback: If the feedback is invalid or the graduated_id does not exist.
         """
         graduated_id = data.pop("graduated_id")
-        feedback = self._verify_feedback(data)
-        user = await self._get_user(graduated_id)
-        user.tutors_feedback_add(feedback.to_dict())
+        tutor = await self._get_tutor(user["email"])
+        feedback = self._generate_feedback(data, tutor)
+        graduated = await self._get_user(graduated_id)
+        graduated.tutors_feedback_add(feedback.to_dict())
         await self._update_data(user)
 
-    def _verify_feedback(self, data: dict[str, Any]) -> TutorFeedback:
+    def _generate_feedback(self, data: dict[str, Any], tutor: User) -> TutorFeedback:
         """
         Verify and validate the feedback data.
 
@@ -59,6 +60,8 @@ class PostFeedback:
         Raises:
             InvalidFeedback: If the feedback data cannot be used to instantiate a TutorFeedback.
         """
+        data["tutor_id"] = tutor.id
+        data["tutor_name"] = tutor.first_name + tutor.last_name
         try:
             feedback = TutorFeedback(**data)
         except (TypeError, ValueError) as e:
@@ -83,6 +86,12 @@ class PostFeedback:
         if not user:
             raise InvalidFeedback("Graduated id is invalid")
         return User(**user)
+
+    async def _get_tutor(self, tutor_email: str) -> User:
+        tutor = await self.user_repo.find_by_email(tutor_email)
+        if not tutor:
+            raise InvalidFeedback("Invalid tutor")
+        return User(**tutor)
 
     async def _update_data(self, data: User):
         """
