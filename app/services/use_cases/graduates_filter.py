@@ -93,7 +93,7 @@ class GraduatesFilter:
         """
         query = {}
 
-        query["role"] = {"$all": "graduate"}
+        query["role"] = "graduate"
         # Technologies
         if filters.get("technologies"):
             query["cv_info.skills"] = {"$all": filters["technologies"]}
