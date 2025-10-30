@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Request
 from fastapi.security import HTTPBearer
 
 from app.api.decorators.jwt_validation import require_jwt
-from app.api.schemas.auth_schemas import LoginRequest, UserMe
+from app.api.schemas.auth_schemas import LoginRequest, UserMe, UserMeFull
 from app.infrastructure.supabase import supabase_client
 from app.services.use_cases.user_login import UserLogin
 from app.services.use_cases.get_user import GetUser
@@ -43,6 +43,25 @@ async def login(payload: LoginRequest):
     "/me",
     status_code=status.HTTP_200_OK,
     response_model=UserMe,
+    response_model_exclude_none=True,
+    response_model_by_alias=True,
+)
+@require_jwt()
+async def auth_me(request: Request):
+    get_user = GetUser()
+
+    try:
+        user_data = await get_user.verify(request.state.user)
+    except UserNotLoggedIn as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+
+    return user_data
+
+
+@router.get(
+    "/me/full_user",
+    status_code=status.HTTP_200_OK,
+    response_model=UserMeFull,
     response_model_exclude_none=True,
     response_model_by_alias=True,
 )
