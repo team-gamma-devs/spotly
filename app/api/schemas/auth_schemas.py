@@ -59,6 +59,8 @@ class UserMeFull(BaseModel):
         None, alias="tutorsFeedback"
     )
     role: str
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         populate_by_name = True
