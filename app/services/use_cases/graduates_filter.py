@@ -77,7 +77,7 @@ class GraduatesFilter:
             filters["technologies"] = techs
 
         if feedbacks:
-            filters["feedbacks"] = feedbacks
+            filters["tutors_feedback"] = feedbacks
 
         return filters
 
@@ -102,8 +102,8 @@ class GraduatesFilter:
             query["cv_info.english_level"] = {"$in": filters["english_levels"]}
 
         # Tutors feedback
-        if filters.get("tutorsFeedback"):
-            query["tutorsFeedback.tutor_id"] = {"$all": filters["tutorsFeedback"]}
+        if filters.get("tutors_feedback"):
+            query["tutors_feedback.tutor_id"] = {"$all": filters["tutors_feedback"]}
 
         logger.info(f"{query}")
 
@@ -124,7 +124,7 @@ class GraduatesFilter:
         skip = (page - 1) * limit
         result = await self.user_repo.find_all(query, skip, limit)
         pages = math.ceil(await self.user_repo.count(query) / limit)
-        logger.info(f"{result}")
+        logger.info(f"Found {len(result)} graduates matching filters.")
         graduates_list = [User(**graduate) for graduate in result]
         logger.info(f"{[user.to_dict() for user in graduates_list]}")
         data = {
