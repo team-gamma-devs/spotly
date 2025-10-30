@@ -54,7 +54,7 @@ router = APIRouter(
 
 
 @router.post("/uploadCSV", status_code=status.HTTP_202_ACCEPTED)
-# @require_jwt(for_manager=True)
+@require_jwt(for_manager=True)
 async def upload_csv(
     request: Request, background_tasks: BackgroundTasks, file: UploadFile = File(...)
 ):
