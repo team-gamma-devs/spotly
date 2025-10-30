@@ -66,7 +66,7 @@ async def auth_me(request: Request):
     response_model_by_alias=True,
 )
 @require_jwt()
-async def auth_me(request: Request):
+async def auth_me_full(request: Request):
     get_user = GetUser()
 
     try:
