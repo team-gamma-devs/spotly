@@ -33,7 +33,7 @@ async def global_exceptions_middleware(request: Request, call_next):
         return response
 
     except (ValueError, TypeError) as e:
-        logger.debug(f"Error: {e}")
+        logger.info(f"Error: {e}")
 
         return JSONResponse(
             status_code=400,
