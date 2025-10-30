@@ -26,7 +26,12 @@ class GraduatesFilter:
         """
         self.user_repo = user_repo or UserRepository()
 
-    async def process_filters(self, filters) -> list[dict[str, Any]]:
+    async def process_filters(
+        self,
+        filters,
+        page: int = 1,
+        page_size=20,
+    ) -> list[dict[str, Any]]:
         """
         Process the filters and return a list of graduates matching the criteria.
 
@@ -38,7 +43,7 @@ class GraduatesFilter:
         """
         filters = self._payload_serialization(filters)
         query = self._build_mongo_filters(filters)
-        data = await self._process_query(query)
+        data = await self._process_query(query, page, page_size)
         serialization = self._serialization_for_response(data["graduates_list"])
         response = {
             "items": serialization,
@@ -48,9 +53,7 @@ class GraduatesFilter:
         }
         return response
 
-    def _payload_serialization(
-        self, payload, page: int, page_size: int
-    ) -> dict[str, Any]:
+    def _payload_serialization(self, payload) -> dict[str, Any]:
         """
         Extract relevant fields from the incoming payload for filtering.
 
@@ -107,7 +110,7 @@ class GraduatesFilter:
         return query
 
     async def _process_query(
-        self, query: dict[str, Any], skip: int = 0, limit: int = 20
+        self, query: dict[str, Any], page: int = 1, limit: int = 20
     ) -> list[User]:
         """
         Execute the database query and convert results to User instances.
@@ -118,6 +121,7 @@ class GraduatesFilter:
         Returns:
             list[User]: List of User model instances.
         """
+        skip = (page - 1) * limit
         result = await self.user_repo.find_all(query, skip, limit)
         pages = math.ceil(await self.user_repo.count(query) / limit)
         logger.info(f"{result}")
