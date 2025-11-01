@@ -11,6 +11,7 @@ class UserMe(BaseModel):
     id: Optional[str] = None
     first_name: Optional[str] = Field(None, alias="firstName")
     last_name: Optional[str] = Field(None, alias="lastName")
+    avatar_url: Optional[str] = Field(None, alias="avatarUrl")
     role: str
     is_first_time: bool = Field(..., alias="isFirstTime")
 
