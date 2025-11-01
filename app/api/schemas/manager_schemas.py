@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, EmailStr, AnyUrl
+from pydantic import BaseModel, Field, EmailStr, AnyUrl, field_validator
 from datetime import datetime
 from typing import Optional, Literal
 
@@ -38,9 +38,9 @@ class Annotations(BaseModel):
         alias="createdAt",
         description="Timestamp when the annotation was created.",
     )
-    message: str = Field(
+    annotation: str = Field(
         ...,
-        description="Message or note attached to the user profile or feedback.",
+        description="Annotation attached to the user profile or feedback.",
     )
 
     class Config:
@@ -114,6 +114,19 @@ class FilteredUsers(BaseModel):
         alias="updatedAt",
         description="Timestamp of the last user data update",
     )
+    cv_url: Optional[AnyUrl] = Field(
+        None,
+        alias="cvUrl",
+        description="Public URL of the user's CV PDF.",
+    )
+
+    @field_validator("github_url", "cv_url", mode="before")
+    @classmethod
+    def empty_str_to_none(cls, v):
+        """Convert empty strings to None for optional URL fields."""
+        if v == "" or v is None:
+            return None
+        return v
 
     class Config:
         populate_by_name = True
@@ -129,7 +142,7 @@ class FilteredUsersResponse(BaseModel):
 
 class FeedbackSchema(BaseModel):
     graduated_id: str = Field(..., alias="graduatedId")
-    message: Optional[str]
+    annotation: Optional[str]
     technical_score: Optional[str] = Field(None, alias="technicalScore")
     professional_score: Optional[str] = Field(None, alias="professionalScore")
 
