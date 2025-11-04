@@ -31,6 +31,7 @@ from app.api.schemas.manager_schemas import (
     FiltersPayload,
     FilteredUsersResponse,
     FeedbackSchema,
+    InvitationsSerchPayload,
 )
 
 # Personalized Exceptions
@@ -56,7 +57,9 @@ router = APIRouter(
 @router.post("/uploadCSV", status_code=status.HTTP_202_ACCEPTED)
 @require_jwt(for_manager=True)
 async def upload_csv(
-    request: Request, background_tasks: BackgroundTasks, file: UploadFile = File(...)
+    request: Request,
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
 ):
     MAX_CSV_SIZE_BYTES = settings.max_csv_size * 1024 * 1024
 
@@ -81,7 +84,9 @@ async def upload_csv(
         invitations = await processor.process_csv(contents)
         background_tasks.add_task(processor.send_invitations, invitations)
     except InvalidCSVException as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )
     except MissingColumnsException as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e)
@@ -91,7 +96,9 @@ async def upload_csv(
 
 
 @router.get(
-    "/filters", response_model=FiltersListResponse, status_code=status.HTTP_200_OK
+    "/filters",
+    response_model=FiltersListResponse,
+    status_code=status.HTTP_200_OK,
 )
 @require_jwt(for_manager=True)
 async def get_filters(request: Request):
@@ -110,7 +117,9 @@ async def search_graduates(
     request: Request,
     payload: FiltersPayload = Body(...),
     page: int = Query(1, ge=1, description="Page number starting in 1"),
-    pageSize: int = Query(20, ge=1, le=100, description="Number of items per page"),
+    pageSize: int = Query(
+        20, ge=1, le=100, description="Number of items per page"
+    ),
 ):
     filters_processor = GraduatesFilter()
     result = await filters_processor.process_filters(payload, page, pageSize)
@@ -127,12 +136,16 @@ async def search_graduates(
 
 @router.post("/feedback", status_code=status.HTTP_201_CREATED)
 @require_jwt(for_manager=True)
-async def tutors_feedback(request: Request, payload: FeedbackSchema = Body(...)):
+async def tutors_feedback(
+    request: Request, payload: FeedbackSchema = Body(...)
+):
     save_feedback = PostFeedback()
     try:
-        save_feedback.save_feedback(payload, request.state.user)
+        await save_feedback.save_feedback(payload, request.state.user)
     except InvalidFeedback as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )
 
     return {"message": "Feedback created successfully"}
 
@@ -144,7 +157,9 @@ async def delete_feedback(request: Request, payload):
     try:
         await feedback_delete.delete(payload)
     except DeleteError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )
 
 
 ##############################################################
@@ -156,17 +171,28 @@ async def delete_feedback(request: Request, payload):
 
 @router.post("/invitations", status_code=status.HTTP_200_OK)
 @require_jwt(for_manager=True)
-async def filter_invitations(request: Request, payload=Body(None)):
+async def filter_invitations(
+    request: Request,
+    payload: InvitationsSerchPayload = Body(...),
+    page: int = Query(1, ge=1, description="Page number starting in 1"),
+    pageSize: int = Query(
+        20, ge=1, le=100, description="Number of items per page"
+    ),
+):
     get_inv = GetInvitations()
-    invitations = await get_inv.get_all_invitations()
+    invitations = await get_inv.get_invitations(payload, page, pageSize)
     return invitations
 
 
-@router.delete("/invitation/{invitation_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/invitation/{invitation_id}", status_code=status.HTTP_204_NO_CONTENT
+)
 @require_jwt(for_manager=True)
 async def delete_invitation(request: Request, invitation_id: str):
     invitation_delete = DeleteInvitation()
     try:
         await invitation_delete.delete(invitation_id)
     except DeleteError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )

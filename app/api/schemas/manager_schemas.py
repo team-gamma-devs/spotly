@@ -5,7 +5,8 @@ from typing import Optional, Literal
 
 class FiltersListResponse(BaseModel):
     filters: list[str] = Field(
-        ..., description="List of possible technology filters available for querys"
+        ...,
+        description="List of possible technology filters available for querys",
     )
 
 
@@ -13,12 +14,12 @@ class FiltersPayload(BaseModel):
     technologies: Optional[list[str]] = Field(
         None, description="List of technologies that graduates must have"
     )
-    english_levels: Optional[list[Literal["basic", "intermediate", "advanced"]]] = (
-        Field(
-            None,
-            alias="englishLevels",
-            description="Minimum level of English that the graduate must have",
-        )
+    english_levels: Optional[
+        list[Literal["basic", "intermediate", "advanced"]]
+    ] = Field(
+        None,
+        alias="englishLevels",
+        description="Minimum level of English that the graduate must have",
     )
     tutors_feedback: Optional[list[str]] = Field(
         None,
@@ -104,10 +105,14 @@ class FilteredUsers(BaseModel):
         description="Dictionary containing tutor feedback data for the user.",
     )
     works_in_it: bool = Field(
-        ..., alias="worksInIt", description="Bool that defines if graduate works in it"
+        ...,
+        alias="worksInIt",
+        description="Bool that defines if graduate works in it",
     )
     created_at: datetime = Field(
-        ..., alias="createdAt", description="Timestamp of the user creation date"
+        ...,
+        alias="createdAt",
+        description="Timestamp of the user creation date",
     )
     updated_at: datetime = Field(
         ...,
@@ -145,6 +150,35 @@ class FeedbackSchema(BaseModel):
     annotation: Optional[str]
     technical_score: Optional[str] = Field(None, alias="technicalScore")
     professional_score: Optional[str] = Field(None, alias="professionalScore")
+
+    class Config:
+        populate_by_name = True
+        validate_by_name = True
+
+
+class InvitationSchema(BaseModel):
+    id: str
+    full_name: str = Field(..., alias="fullName")
+    email: EmailStr
+    cohort: int
+    log_state: bool = Field(..., alias="logState")
+    created_at: datetime = Field(..., alias="cretedAt")
+    expires_at: datetime = Field(..., alias="expiresAt")
+
+
+class InvitationsSerchPayload(BaseModel):
+    search_term: Optional[str] = Field(None, alias="searchTerm")
+
+    class Config:
+        populate_by_name = True
+        validate_by_name = True
+
+
+class InvitationsResultResponse(BaseModel):
+    items: list[InvitationSchema]
+    pages: int
+    page: int
+    limit: int
 
     class Config:
         populate_by_name = True
