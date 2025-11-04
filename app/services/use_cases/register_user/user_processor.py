@@ -7,10 +7,18 @@ from app.logger import get_logger
 from app.settings import settings
 from app.domain.models.user import User
 from app.domain.models.cvinfo import CVInfo
+from app.domain.models.invitation import Invitation
 from app.infrastructure.supabase import supabase_client
 from app.domain.ports.supabase_storage_port import ISupabaseStorage
-from app.infrastructure.supabase.bucket_service import SupabaseStorageRepository
-from app.infrastructure.database.repositories.user_repository import UserRepository
+from app.infrastructure.supabase.bucket_service import (
+    SupabaseStorageRepository,
+)
+from app.infrastructure.database.repositories.user_repository import (
+    UserRepository,
+)
+from app.infrastructure.database.repositories.invitation_repository import (
+    InvitationRepository,
+)
 from app.services.exceptions.register_user_exceptions import (
     InvalidFileType,
     FileTooLarge,
@@ -39,6 +47,7 @@ class UserProcessor:
     def __init__(
         self,
         user_repo: Optional[UserRepository] = None,
+        invitation_repo: Optional[InvitationRepository] = None,
         supabase_service=None,
         bucket_service: Optional[ISupabaseStorage] = None,
     ):
@@ -51,6 +60,7 @@ class UserProcessor:
             bucket_service (Optional[ISupabaseStorage]): Optional bucket service instance.
         """
         self.user_repo = user_repo or UserRepository()
+        self.invitation_repo = invitation_repo or InvitationRepository()
         self.supabase_service = supabase_service or supabase_client
         self.bucket_service = bucket_service or SupabaseStorageRepository()
 
@@ -83,7 +93,9 @@ class UserProcessor:
             FileTooLarge: If the avatar image exceeds size limits.
         """
         if await self.user_repo.user_email_exists(email):
-            raise UserAlreadyExists(f"User with email {email} already registered")
+            raise UserAlreadyExists(
+                f"User with email {email} already registered"
+            )
 
         await self._validate_img(avatar_img)
         avatar_img_url = await self._save_avatar_img(avatar_img)
@@ -104,6 +116,7 @@ class UserProcessor:
         user_id = await self._save_user(new_user)
 
         self._change_user_state(email)
+        await self._change_invitation_state(email)
         return user_id
 
     async def _save_avatar_img(self, avatar_img: UploadFile) -> dict[str, str]:
@@ -181,5 +194,12 @@ class UserProcessor:
             raise ValueError(f"User with email {email} not found")
 
         supabase_client.auth.admin.update_user_by_id(
-            target_user.id, attributes={"user_metadata": {"is_first_time": False}}
+            target_user.id,
+            attributes={"user_metadata": {"is_first_time": False}},
+        )
+
+    async def _change_invitation_state(self, email: str):
+        invitation = await self.invitation_repo.find_by_email(email)
+        await self.invitation_repo.update(
+            id_=invitation["id"], updates={"log_state": True}
         )
