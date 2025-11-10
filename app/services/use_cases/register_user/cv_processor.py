@@ -1,0 +1,254 @@
+from fastapi import UploadFile
+import re
+import fitz
+from typing import Dict, Any, Optional
+
+from app.settings import settings
+from app.logger import get_logger
+from app.services.prompts.prompts import SYSTEM_PROMPT, USER_PROMPT
+from app.services.schemas.cv_info_schema import CVInfoSchema
+from app.domain.ports.ia_service_port import IAService
+from app.infrastructure.ai import ai_service
+from app.services.exceptions.register_user_exceptions import (
+    InvalidFileType,
+    FileTooLarge,
+    InvalidCV,
+)
+from app.infrastructure.ai.exceptions import ParsingError
+
+logger = get_logger(__name__)
+
+
+class CVProcessor:
+    """
+    Processes personal and LinkedIn CVs to extract structured information.
+
+    Attributes:
+        ia_service (IAService): AI service used for parsing CV content.
+        system_prompt (str): System prompt for AI parsing.
+        user_prompt (str): User prompt for AI parsing.
+    """
+
+    def __init__(
+        self,
+        ia_service: IAService = ai_service,
+        system_prompt: str = SYSTEM_PROMPT,
+        user_prompt: str = USER_PROMPT,
+    ):
+        """
+        Initialize the CVProcessor with AI service and prompts.
+
+        Args:
+            ia_service (IAService): AI service instance. Defaults to `ai_service`.
+            system_prompt (str): System prompt string for AI. Defaults to SYSTEM_PROMPT.
+            user_prompt (str): User prompt string for AI. Defaults to USER_PROMPT.
+        """
+        self.ia_service = ia_service
+        self.system_prompt = system_prompt
+        self.user_prompt = user_prompt
+
+    async def process_cvs(
+        self, personal_cv: UploadFile, linkedin_cv: UploadFile
+    ) -> Dict[str, Any]:
+        """
+        Process both personal CV and LinkedIn CV, returning structured user data.
+
+        Args:
+            personal_cv (UploadFile): Personal CV PDF file.
+            linkedin_cv (UploadFile): LinkedIn CV PDF file.
+
+        Returns:
+            dict: Dictionary containing extracted user information, including:
+                - first_name (str)
+                - last_name (str)
+                - skills (List[str])
+                - english_level (str)
+                - linkedin_url (str)
+                - works_in_it (bool)
+
+        Raises:
+            InvalidFileType: If a file is not a valid PDF.
+            FileTooLarge: If a file exceeds the maximum allowed size.
+            InvalidCV: If LinkedIn CV is invalid or corrupted.
+            ParsingError: If AI fails to parse CV content.
+        """
+        self._validate_pdf(personal_cv)
+        self._validate_pdf(linkedin_cv)
+
+        personal_cv_text = self._extract_text(personal_cv)
+        linkedin_cv_text = self._extract_text(linkedin_cv, is_linkedin_cv=True)
+
+        personal_cv_parsed = None
+        if personal_cv_text:
+            personal_cv_parsed = await self._parse_pdf_text(
+                personal_cv_text, CVInfoSchema, self.system_prompt, self.user_prompt
+            )
+        else:
+            personal_cv_parsed = await self._parse_pdf_file(
+                personal_cv, CVInfoSchema, self.system_prompt, self.user_prompt
+            )
+
+        linkedin_cv_parsed = None
+        if linkedin_cv_text:
+            logger.info(f"Parsed text: {linkedin_cv_text}")
+            linkedin_cv_parsed = await self._parse_pdf_text(
+                personal_cv_text, CVInfoSchema, self.system_prompt, self.user_prompt
+            )
+            logger.info(f"Extracted fields: {linkedin_cv_parsed}")
+        else:
+            raise InvalidCV("The provided LinkedIn CV file is corrupted")
+
+        if not linkedin_cv_parsed:
+            raise ParsingError("Failed to parse LinkedIn CV, try again")
+
+        result = {
+            "first_name": personal_cv_parsed.first_name,
+            "last_name": personal_cv_parsed.last_name,
+            "skills": list(set(personal_cv_parsed.skills + linkedin_cv_parsed.skills)),
+            "english_level": personal_cv_parsed.english_level,
+            "linkedin_url": self._extract_linkedin_url(linkedin_cv_text),
+            "works_in_it": personal_cv_parsed.works_in_it,
+        }
+
+        return result
+
+    def _validate_pdf(self, file: UploadFile):
+        """
+        Validate that the uploaded file is a PDF and does not exceed the size limit.
+
+        Args:
+            file (UploadFile): File to validate.
+
+        Raises:
+            InvalidFileType: If the file is not a PDF.
+            FileTooLarge: If the file exceeds the maximum allowed size.
+        """
+        MAX_PDF_SIZE_BYTES = settings.max_pdf_size * 1024 * 1024
+
+        if not file.content_type.startswith("application/pdf"):
+            raise InvalidFileType(f"{file.filename} is not a valid PDF file")
+
+        file.file.seek(0, 2)
+        size = file.file.tell()
+        file.file.seek(0)
+        if size > MAX_PDF_SIZE_BYTES:
+            raise FileTooLarge(
+                f"{file.filename} exceeds {settings.max_pdf_size:.1f}MB limit"
+            )
+
+    def _extract_text(
+        self, file: UploadFile, is_linkedin_cv: bool = False
+    ) -> Optional[str]:
+        """
+        Extract text from the first two pages of a PDF file.
+
+        Args:
+            file (UploadFile): PDF file to extract text from.
+            is_linkedin_cv (bool): Whether the file is a LinkedIn CV. Defaults to False.
+
+        Returns:
+            Optional[str]: Extracted text or None if extraction fails.
+
+        Raises:
+            InvalidFileType: If the file is not a valid PDF.
+            InvalidCV: If LinkedIn CV metadata is invalid.
+        """
+        try:
+            contents = file.file.read()
+            with fitz.open(stream=contents, filetype="pdf") as doc:
+                if is_linkedin_cv:
+                    metadata = doc.metadata or {}
+                    creator = (metadata.get("author") or "").lower()
+                    producer = (metadata.get("producer") or "").lower()
+                    if not any("linkedin" in field for field in (creator, producer)):
+                        raise InvalidCV(
+                            f"{file.filename} metadata does not indicate LinkedIn origin"
+                        )
+
+                pages_text = [page.get_text() for page in doc[:2]]
+                full_text = "\n\n".join(pages_text)
+                full_text = re.sub(r"\n{3,}", "\n\n", full_text).strip()
+                if len(full_text) < 50:
+                    raise ValueError
+                return full_text
+        except fitz.FileDataError:
+            raise InvalidFileType(f"{file.filename} is not a valid PDF file")
+        except InvalidCV:
+            raise
+        except Exception:
+            return None
+        finally:
+            file.file.seek(0)
+
+    async def _parse_pdf_text(
+        self, cv_text: str, schema: CVInfoSchema, system_prompt: str, user_prompt: str
+    ):
+        """
+        Parse PDF text using the AI service and a defined schema.
+
+        Args:
+            cv_text (str): Extracted text from a PDF.
+            schema (CVInfoSchema): Schema to map the parsed content.
+            system_prompt (str): System prompt for AI parsing.
+            user_prompt (str): User prompt for AI parsing.
+
+        Returns:
+            CVInfoSchema | None: Parsed CV object, or None if parsing fails.
+        """
+        parsed_cv = None
+        try:
+            parsed_cv = await ai_service.parse_text_with_schema(
+                cv_text, schema, system_prompt, user_prompt
+            )
+        except ParsingError as e:
+            logger.critical(f"Failed to parse CV: {e}")
+        return parsed_cv
+
+    async def _parse_pdf_file(
+        self,
+        file: UploadFile,
+        schema: CVInfoSchema,
+        system_prompt: str,
+        user_prompt: str,
+    ):
+        """
+        Parse PDF file content using the AI service and a defined schema.
+
+        Args:
+            file (UploadFile): PDF file to parse.
+            schema (CVInfoSchema): Schema to map the parsed content.
+            system_prompt (str): System prompt for AI parsing.
+            user_prompt (str): User prompt for AI parsing.
+
+        Returns:
+            CVInfoSchema: Parsed CV object.
+        """
+        content = file.file.read()
+        parsed_cv = await ai_service.parse_pdf_with_schema(
+            content, schema, system_prompt, user_prompt
+        )
+        file.file.seek(0)
+        return parsed_cv
+
+    def _extract_linkedin_url(self, text: str) -> str:
+        """
+        Extract the LinkedIn profile URL from the given text.
+
+        Args:
+            text (str): Text extracted from LinkedIn CV.
+
+        Returns:
+            str: LinkedIn profile URL.
+
+        Raises:
+            InvalidCV: If no LinkedIn URL is found.
+        """
+        linkedin_pattern = r"(https?://)?(www\.)?linkedin\.com/in/([a-zA-Z0-9\-_]+(?:\n?[a-zA-Z0-9\-_]+)*)"
+        result = re.search(linkedin_pattern, text)
+        if not result:
+            raise InvalidCV("LinkedIn CV must include a profile URL")
+
+        url = result.group().replace("\n", "")
+        if not url.startswith("https://"):
+            url = "https://" + url
+        return url

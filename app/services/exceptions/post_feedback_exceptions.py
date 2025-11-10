@@ -1,0 +1,2 @@
+class InvalidFeedback(Exception):
+    pass

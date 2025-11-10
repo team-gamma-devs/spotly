@@ -1,0 +1,2 @@
+class DeleteError(Exception):
+    pass
