@@ -22,8 +22,10 @@ async def get_user_data(request: Request):
     get_user = GetUser()
 
     try:
-        user = await get_user.get_user_by_email(email)
+        user = await get_user._get_user_by_email(email)
     except UserNotLoggedIn as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)
+        )
 
     return user.to_dict()
