@@ -27,7 +27,9 @@ def create_app() -> FastAPI:
         description="API for Spotly - Production Ready",
         version="1.0.0",
         debug=settings.debug,
-        docs_url="/docs" if settings.debug else None,  # Disable docs in production
+        docs_url=(
+            "/docs" if settings.debug else None
+        ),  # Disable docs in production
         redoc_url="/redoc" if settings.debug else None,
         lifespan=lifespan,
     )
