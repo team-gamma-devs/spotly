@@ -183,3 +183,14 @@ class InvitationsResultResponse(BaseModel):
     class Config:
         populate_by_name = True
         validate_by_name = True
+
+
+class IncompleteFeedbacks(BaseModel):
+    id: str
+    first_name: str = Field(..., alias="firstName")
+    last_name: str = Field(..., alias="lastName")
+    cohort: int
+
+    class Config:
+        populate_by_name = True
+        validate_by_name = True

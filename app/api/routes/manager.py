@@ -24,6 +24,9 @@ from app.services.use_cases.graduates_filter import GraduatesFilter
 from app.services.use_cases.delete_invitation import DeleteInvitation
 from app.services.use_cases.post_feedback import PostFeedback
 from app.services.use_cases.delete_feedback import DeleteFeedback
+from app.services.use_cases.get_incomplete_feedbacks import (
+    GetIncompleteFeedbacks,
+)
 
 # Schemas
 from app.api.schemas.manager_schemas import (
@@ -32,6 +35,7 @@ from app.api.schemas.manager_schemas import (
     FilteredUsersResponse,
     FeedbackSchema,
     InvitationsSerchPayload,
+    IncompleteFeedbacks,
 )
 
 # Personalized Exceptions
@@ -132,6 +136,20 @@ async def search_graduates(
 ##                       FEEDBACK                            #
 ##                                                           #
 ##############################################################
+
+
+@router.post(
+    "/feedback/incomplete",
+    response_model=IncompleteFeedbacks,
+    response_model_by_alias=True,
+    status_code=status.HTTP_200_OK,
+)
+@require_jwt(for_manager=True)
+async def incomplete_feedbacks(request: Request):
+    incomplete_feedbacks = GetIncompleteFeedbacks()
+    return await incomplete_feedbacks.get_incomplete_feedbacks(
+        request.state.user
+    )
 
 
 @router.post("/feedback", status_code=status.HTTP_201_CREATED)
