@@ -162,11 +162,15 @@ class InvitationSchema(BaseModel):
     email: EmailStr
     cohort: int
     log_state: bool = Field(..., alias="logState")
-    created_at: datetime = Field(..., alias="cretedAt")
+    created_at: datetime = Field(..., alias="createdAt")
     expires_at: datetime = Field(..., alias="expiresAt")
 
+    class Config:
+        populate_by_name = True
+        validate_by_name = True
 
-class InvitationsSerchPayload(BaseModel):
+
+class InvitationsSearchPayload(BaseModel):
     search_term: Optional[str] = Field(None, alias="searchTerm")
 
     class Config:
@@ -175,7 +179,7 @@ class InvitationsSerchPayload(BaseModel):
 
 
 class InvitationsResultResponse(BaseModel):
-    items: list[InvitationSchema]
+    items: list[Optional[InvitationSchema]]
     pages: int
     page: int
     limit: int
