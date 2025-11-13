@@ -3,7 +3,9 @@ from typing import Any
 from app.logger import get_logger
 from app.settings import settings
 from app.domain.models.user import User
-from app.infrastructure.database.repositories.user_repository import UserRepository
+from app.infrastructure.database.repositories.user_repository import (
+    UserRepository,
+)
 from app.services.exceptions.user_login_exceptions import UserNotLoggedIn
 
 logger = get_logger(__name__)
@@ -40,7 +42,9 @@ class GetUser:
         """
         user_metadata = self._extract_metadata(user)
         user_data = await self._get_user_by_email(user["email"])
-        return user_metadata | user_data.to_dict() if user_data else user_metadata
+        return (
+            user_metadata | user_data.to_dict() if user_data else user_metadata
+        )
 
     def _extract_metadata(self, user: dict[str, Any]) -> dict[str, Any]:
         """
