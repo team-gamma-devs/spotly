@@ -145,7 +145,7 @@ async def search_graduates(
     response_model_by_alias=True,
     status_code=status.HTTP_200_OK,
 )
-# @require_jwt(for_manager=True)
+@require_jwt(for_manager=True)
 async def incomplete_feedbacks(request: Request):
     incomplete_feedbacks = GetIncompleteFeedbacks()
     return await incomplete_feedbacks.get_incomplete_feedbacks(
