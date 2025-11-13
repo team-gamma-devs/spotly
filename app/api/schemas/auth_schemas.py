@@ -54,7 +54,6 @@ class UserMeFull(BaseModel):
     email: EmailStr
     avatar_url: AnyUrl
     cohort: Optional[int]
-    github: Optional[str]
     cv_info: Optional[CVInfoModel] = Field(None, alias="cvInfo")
     tutors_feedback: Optional[list[TutorsFeedbackModel]] = Field(
         None, alias="tutorsFeedback"
