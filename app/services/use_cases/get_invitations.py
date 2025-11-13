@@ -47,7 +47,7 @@ class GetInvitations:
         return result
 
     def _generate_query(self, payload) -> dict[str, Any]:
-        search_term = search_term = (payload.search_param or "").strip()
+        search_term = search_term = (payload.search_term or "").strip()
         if not search_term:
             return {}
 
