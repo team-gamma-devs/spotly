@@ -1,4 +1,5 @@
 import resend
+import time
 from app.domain.ports.email_service_port import IEmailService
 
 
@@ -50,8 +51,14 @@ class ResendEmailService(IEmailService):
         """
         try:
             resend.Emails.send(
-                {"from": self.sender, "to": [to], "subject": subject, "html": body}
+                {
+                    "from": self.sender,
+                    "to": [to],
+                    "subject": subject,
+                    "html": body,
+                }
             )
+            time.sleep(1)
         except resend.ResendError as e:
             raise Exception(f"ResendError: {e}")
         except resend.RateLimitError as e:
