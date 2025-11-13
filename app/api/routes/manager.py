@@ -34,8 +34,9 @@ from app.api.schemas.manager_schemas import (
     FiltersPayload,
     FilteredUsersResponse,
     FeedbackSchema,
-    InvitationsSerchPayload,
+    InvitationsSearchPayload,
     IncompleteFeedbacks,
+    InvitationsResultResponse,
 )
 
 # Personalized Exceptions
@@ -144,7 +145,7 @@ async def search_graduates(
     response_model_by_alias=True,
     status_code=status.HTTP_200_OK,
 )
-@require_jwt(for_manager=True)
+# @require_jwt(for_manager=True)
 async def incomplete_feedbacks(request: Request):
     incomplete_feedbacks = GetIncompleteFeedbacks()
     return await incomplete_feedbacks.get_incomplete_feedbacks(
@@ -187,11 +188,16 @@ async def delete_feedback(request: Request, payload):
 ##############################################################
 
 
-@router.post("/invitations", status_code=status.HTTP_200_OK)
+@router.post(
+    "/invitations",
+    response_model=InvitationsResultResponse,
+    response_model_by_alias=True,
+    status_code=status.HTTP_200_OK,
+)
 @require_jwt(for_manager=True)
 async def filter_invitations(
     request: Request,
-    payload: InvitationsSerchPayload = Body(...),
+    payload: InvitationsSearchPayload = Body(...),
     page: int = Query(1, ge=1, description="Page number starting in 1"),
     pageSize: int = Query(
         20, ge=1, le=100, description="Number of items per page"
