@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException, status, Request
 from fastapi.security import HTTPBearer
 
 from app.api.decorators.jwt_validation import require_jwt
-from app.api.schemas.auth_schemas import LoginRequest, UserMe, UserMeFull
-from app.infrastructure.supabase import supabase_client
+
+### *************************** SERVICES *************************
 from app.services.use_cases.user_login import UserLogin
 from app.services.use_cases.get_user import GetUser
 from app.services.exceptions.user_login_exceptions import (
@@ -12,19 +12,25 @@ from app.services.exceptions.user_login_exceptions import (
     UserNotLoggedIn,
 )
 
+### ************************* SCHEMAS *************************
+from app.api.schemas.auth_schemas import LoginRequest, UserMe, UserMeFull
+
+### ************************** SWAGGER DOCS *******************
+from app.api.docs.authentication_docs import (
+    LOGIN_DOCS,
+    AUTH_ME_DOCS,
+    AUTH_ME_FULL_DOCS,
+)
 
 router = APIRouter(
     prefix="/auth",
-    tags=["auth"],
+    tags=["Authentication"],
 )
 
 security = HTTPBearer()
 
 
-@router.post(
-    "/login",
-    status_code=status.HTTP_200_OK,
-)
+@router.post("/login", status_code=status.HTTP_200_OK, **LOGIN_DOCS)
 async def login(payload: LoginRequest):
     email = payload.email
     user_login = UserLogin()
@@ -36,7 +42,7 @@ async def login(payload: LoginRequest):
     except InvitationExpired as e:
         raise HTTPException(status_code=status.HTTP_410_GONE, detail=str(e))
 
-    return {f"message": "Magic link sent to {email}"}
+    return {"message": f"Magic link sent to {email}"}
 
 
 @router.get(
@@ -45,6 +51,7 @@ async def login(payload: LoginRequest):
     response_model=UserMe,
     response_model_exclude_none=True,
     response_model_by_alias=True,
+    **AUTH_ME_DOCS,
 )
 @require_jwt()
 async def auth_me(request: Request):
@@ -64,6 +71,7 @@ async def auth_me(request: Request):
     response_model=UserMeFull,
     response_model_exclude_none=True,
     response_model_by_alias=True,
+    **AUTH_ME_FULL_DOCS,
 )
 @require_jwt()
 async def auth_me_full(request: Request):

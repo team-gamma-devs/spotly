@@ -1,4 +1,3 @@
-# Dependencies
 from fastapi import (
     APIRouter,
     File,
@@ -9,14 +8,14 @@ from fastapi import (
     Body,
     Request,
     Query,
+    Path,
 )
 
-
-# General Config
+### ******************* DEVELOPER EXPERIENCE STUFF *********************
 from app.logger import get_logger
 from app.settings import settings
 
-# Use Cases
+### ******************* SERVICES *********************
 from app.services.use_cases.csv_invitation import CSVInvitationProcessor
 from app.services.use_cases.get_filters import GetFilters
 from app.services.use_cases.get_invitations import GetInvitations
@@ -28,7 +27,7 @@ from app.services.use_cases.get_incomplete_feedbacks import (
     GetIncompleteFeedbacks,
 )
 
-# Schemas
+### ******************* SCHEMAS *********************
 from app.api.schemas.manager_schemas import (
     FiltersListResponse,
     FiltersPayload,
@@ -39,7 +38,7 @@ from app.api.schemas.manager_schemas import (
     InvitationsResultResponse,
 )
 
-# Personalized Exceptions
+### ******************* EXCEPTIONS *********************
 from app.services.exceptions.csv_invitation_exceptions import (
     InvalidCSVException,
     MissingColumnsException,
@@ -47,24 +46,149 @@ from app.services.exceptions.csv_invitation_exceptions import (
 from app.services.exceptions.delete_user_exceptions import DeleteError
 from app.services.exceptions.post_feedback_exceptions import InvalidFeedback
 
-# JWT Verify Decorator
+### ******************* JEISON WEB TOKEN DECORATOR *********************
 from app.api.decorators.jwt_validation import require_jwt
+
+### ******************* SWAGGER DOCS *********************
+from app.api.docs.manager_docs import (
+    UPLOAD_CSV_DOCS,
+    GET_FILTERS_DOCS,
+    SEARCH_GRADUATES_DOCS,
+    INCOMPLETE_FEEDBACKS_DOCS,
+    CREATE_FEEDBACK_DOCS,
+    DELETE_FEEDBACK_DOCS,
+    FILTER_INVITATIONS_DOCS,
+    DELETE_INVITATION_DOCS,
+)
 
 logger = get_logger(__name__)
 
-
 router = APIRouter(
     prefix="/manager",
-    tags=["manager"],
+    tags=["Manager"],
 )
 
+##############################################################
+##                                                           #
+##                       FILTERS                         ....#
+##                                                           #
+##############################################################
 
-@router.post("/uploadCSV", status_code=status.HTTP_202_ACCEPTED)
+
+@router.get(
+    "/filters",
+    response_model=FiltersListResponse,
+    status_code=status.HTTP_200_OK,
+    **GET_FILTERS_DOCS,
+)
+@require_jwt(for_manager=True)
+async def get_filters(request: Request):
+    filters = GetFilters()
+    return {"filters": await filters.get_available_filters()}
+
+
+@router.post(
+    "/search_graduates",
+    response_model=FilteredUsersResponse,
+    response_model_by_alias=True,
+    status_code=status.HTTP_200_OK,
+    **SEARCH_GRADUATES_DOCS,
+)
+@require_jwt(for_manager=True)
+async def search_graduates(
+    request: Request,
+    payload: FiltersPayload = Body(
+        ..., description="Filter criteria for graduate search"
+    ),
+    page: int = Query(1, ge=1, description="Page number (starts at 1)"),
+    pageSize: int = Query(
+        20, ge=1, le=100, description="Number of items per page (max 100)"
+    ),
+):
+    filters_processor = GraduatesFilter()
+    result = await filters_processor.process_filters(payload, page, pageSize)
+    logger.info(f"{result}")
+    return result
+
+
+##############################################################
+##                                                           #
+##                       FEEDBACK                            #
+##                                                           #
+##############################################################
+
+
+@router.post(
+    "/feedback/incomplete",
+    response_model=IncompleteFeedbacks,
+    response_model_by_alias=True,
+    status_code=status.HTTP_200_OK,
+    **INCOMPLETE_FEEDBACKS_DOCS,
+)
+@require_jwt(for_manager=True)
+async def incomplete_feedbacks(request: Request):
+    incomplete_feedbacks = GetIncompleteFeedbacks()
+    return await incomplete_feedbacks.get_incomplete_feedbacks(request.state.user)
+
+
+@router.post("/feedback", status_code=status.HTTP_201_CREATED, **CREATE_FEEDBACK_DOCS)
+@require_jwt(for_manager=True)
+async def tutors_feedback(
+    request: Request,
+    payload: FeedbackSchema = Body(
+        ...,
+        description="Feedback data for graduate",
+        examples=[
+            {
+                "graduatedId": "123",
+                "professionalScore": "Excellent",
+                "technicalScore": "Good",
+                "annotation": "Great communication skills and solid technical foundation.",
+            }
+        ],
+    ),
+):
+    save_feedback = PostFeedback()
+    try:
+        await save_feedback.save_feedback(payload, request.state.user)
+    except InvalidFeedback as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    return {"message": "Feedback created successfully"}
+
+
+@router.delete(
+    "/feedback", status_code=status.HTTP_204_NO_CONTENT, **DELETE_FEEDBACK_DOCS
+)
+@require_jwt(for_manager=True)
+async def delete_feedback(
+    request: Request,
+    payload: dict = Body(
+        ..., description="Feedback ID to delete", example={"id": "feedback_123"}
+    ),
+):
+    feedback_delete = DeleteFeedback()
+    try:
+        await feedback_delete.delete(payload)
+    except DeleteError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+##############################################################
+##                                                           #
+##                       INVITATIONS                         #
+##                                                           #
+##############################################################
+
+
+@router.post("/uploadCSV", status_code=status.HTTP_202_ACCEPTED, **UPLOAD_CSV_DOCS)
 @require_jwt(for_manager=True)
 async def upload_csv(
     request: Request,
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
+    file: UploadFile = File(
+        ..., description="CSV file containing graduate invitations"
+    ),
 ):
     MAX_CSV_SIZE_BYTES = settings.max_csv_size * 1024 * 1024
 
@@ -98,105 +222,43 @@ async def upload_csv(
     return {"message": "Invitations generated successfully"}
 
 
-@router.get(
-    "/filters",
-    response_model=FiltersListResponse,
-    status_code=status.HTTP_200_OK,
-)
-@require_jwt(for_manager=True)
-async def get_filters(request: Request):
-    filters = GetFilters()
-    return {"filters": await filters.get_available_filters()}
-
-
-@router.post(
-    "/search_graduates",
-    response_model=FilteredUsersResponse,
-    response_model_by_alias=True,
-    status_code=status.HTTP_200_OK,
-)
-@require_jwt(for_manager=True)
-async def search_graduates(
-    request: Request,
-    payload: FiltersPayload = Body(...),
-    page: int = Query(1, ge=1, description="Page number starting in 1"),
-    pageSize: int = Query(20, ge=1, le=100, description="Number of items per page"),
-):
-    filters_processor = GraduatesFilter()
-    result = await filters_processor.process_filters(payload, page, pageSize)
-    logger.info(f"{result}")
-    return result
-
-
-##############################################################
-##                                                           #
-##                       FEEDBACK                            #
-##                                                           #
-##############################################################
-
-
-@router.post(
-    "/feedback/incomplete",
-    response_model=IncompleteFeedbacks,
-    response_model_by_alias=True,
-    status_code=status.HTTP_200_OK,
-)
-@require_jwt(for_manager=True)
-async def incomplete_feedbacks(request: Request):
-    incomplete_feedbacks = GetIncompleteFeedbacks()
-    return await incomplete_feedbacks.get_incomplete_feedbacks(request.state.user)
-
-
-@router.post("/feedback", status_code=status.HTTP_201_CREATED)
-@require_jwt(for_manager=True)
-async def tutors_feedback(request: Request, payload: FeedbackSchema = Body(...)):
-    save_feedback = PostFeedback()
-    try:
-        await save_feedback.save_feedback(payload, request.state.user)
-    except InvalidFeedback as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-    return {"message": "Feedback created successfully"}
-
-
-@router.delete("/feedback", status_code=status.HTTP_204_NO_CONTENT)
-@require_jwt(for_manager=True)
-async def delete_feedback(request: Request, payload):
-    feedback_delete = DeleteFeedback()
-    try:
-        await feedback_delete.delete(payload)
-    except DeleteError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-
-##############################################################
-##                                                           #
-##                       INVITATIONS                         #
-##                                                           #
-##############################################################
-
-
 @router.post(
     "/invitations",
     response_model=InvitationsResultResponse,
     response_model_by_alias=True,
     status_code=status.HTTP_200_OK,
+    **FILTER_INVITATIONS_DOCS,
 )
 @require_jwt(for_manager=True)
 async def filter_invitations(
     request: Request,
-    payload: InvitationsSearchPayload = Body(...),
-    page: int = Query(1, ge=1, description="Page number starting in 1"),
-    pageSize: int = Query(20, ge=1, le=100, description="Number of items per page"),
+    payload: InvitationsSearchPayload = Body(
+        ...,
+        description="Search criteria for invitations",
+        examples=[{"searchTerm": "john"}],
+    ),
+    page: int = Query(1, ge=1, description="Page number (starts at 1)"),
+    pageSize: int = Query(
+        20, ge=1, le=100, description="Number of items per page (max 100)"
+    ),
 ):
     get_inv = GetInvitations()
     invitations = await get_inv.get_invitations(payload, page, pageSize)
     return invitations
 
 
-@router.delete("/invitation/{invitation_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/invitation/{invitation_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    **DELETE_INVITATION_DOCS,
+)
 @require_jwt(for_manager=True)
-async def delete_invitation(request: Request, invitation_id: str):
+async def delete_invitation(
+    request: Request,
+    invitation_id: str = Path(
+        ..., description="Unique identifier of the invitation to delete"
+    ),
+):
     invitation_delete = DeleteInvitation()
     try:
         await invitation_delete.delete(invitation_id)
