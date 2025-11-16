@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, EmailStr, AnyUrl, field_validator
+from pydantic import BaseModel, Field, EmailStr, field_validator, ConfigDict, AnyUrl
 from datetime import datetime
 from typing import Optional, Literal
 
@@ -6,20 +6,22 @@ from typing import Optional, Literal
 class FiltersListResponse(BaseModel):
     filters: list[str] = Field(
         ...,
-        description="List of possible technology filters available for querys",
+        description="List of possible technology filters available for queries",
     )
 
 
 class FiltersPayload(BaseModel):
+    model_config = ConfigDict(populate_by_alias=True)
+
     technologies: Optional[list[str]] = Field(
         None, description="List of technologies that graduates must have"
     )
-    english_levels: Optional[
-        list[Literal["basic", "intermediate", "advanced"]]
-    ] = Field(
-        None,
-        alias="englishLevels",
-        description="Minimum level of English that the graduate must have",
+    english_levels: Optional[list[Literal["Basic", "Intermediate", "Advanced"]]] = (
+        Field(
+            None,
+            alias="englishLevels",
+            description="Minimum level of English that the graduate must have",
+        )
     )
     tutors_feedback: Optional[list[str]] = Field(
         None,
@@ -27,29 +29,42 @@ class FiltersPayload(BaseModel):
         description="Tutors id's feedbacks that graduate must have",
     )
 
-    class Config:
-        populate_by_name = True
-        validate_by_name = True
 
-
-# Filtered Users Response Model
 class Annotations(BaseModel):
-    created_at: datetime = Field(
+    model_config = ConfigDict(populate_by_alias=True)
+
+    id: str = Field(
         ...,
-        alias="createdAt",
-        description="Timestamp when the annotation was created.",
+        description="Unique identifier of the annotation.",
+    )
+    created_at: datetime = Field(
+        ..., alias="createdAt", description="Timestamp when the annotation was created."
     )
     annotation: str = Field(
         ...,
         description="Annotation attached to the user profile or feedback.",
     )
 
-    class Config:
-        populate_by_name = True
-        validate_by_name = True
+
+class TutorFeedbackItem(BaseModel):
+    """Individual tutor feedback item for the dictionary values"""
+
+    model_config = ConfigDict(populate_by_alias=True)
+
+    created_at: datetime = Field(..., alias="createdAt")
+    professional_score: Literal["Poor", "Average", "Good", "Excellent"] = Field(
+        ..., alias="professionalScore"
+    )
+    technical_score: Literal["Poor", "Average", "Good", "Excellent"] = Field(
+        ..., alias="technicalScore"
+    )
+    tutor_name: str = Field(..., alias="tutorName")
+    tutor_id: str = Field(..., alias="tutorId")
 
 
 class FilteredUsers(BaseModel):
+    model_config = ConfigDict(populate_by_alias=True)
+
     id: str = Field(
         ...,
         description="Unique identifier of the user.",
@@ -68,7 +83,7 @@ class FilteredUsers(BaseModel):
         ...,
         description="User's email address. Must be a valid email format.",
     )
-    english_level: str = Field(
+    english_level: Literal["Basic", "Intermediate", "Advanced"] = Field(
         ..., alias="englishLevel", description="User's english level"
     )
     avatar_url: AnyUrl = Field(
@@ -99,7 +114,7 @@ class FilteredUsers(BaseModel):
         None,
         description="Metadata or comments associated with the user.",
     )
-    tutors_feedback: Optional[dict[str, dict]] = Field(
+    tutors_feedback: Optional[dict[str, TutorFeedbackItem]] = Field(
         None,
         alias="tutorsFeedback",
         description="Dictionary containing tutor feedback data for the user.",
@@ -133,12 +148,10 @@ class FilteredUsers(BaseModel):
             return None
         return v
 
-    class Config:
-        populate_by_name = True
-        validate_by_name = True
-
 
 class FilteredUsersResponse(BaseModel):
+    """Matches PaginatedGraduatesResponse from graduates.ts"""
+
     items: list[FilteredUsers]
     pages: int
     page: int
@@ -146,17 +159,23 @@ class FilteredUsersResponse(BaseModel):
 
 
 class FeedbackSchema(BaseModel):
-    graduated_id: str = Field(..., alias="graduatedId")
-    annotation: Optional[str]
-    technical_score: Optional[str] = Field(None, alias="technicalScore")
-    professional_score: Optional[str] = Field(None, alias="professionalScore")
+    model_config = ConfigDict(populate_by_alias=True)
 
-    class Config:
-        populate_by_name = True
-        validate_by_name = True
+    graduated_id: str = Field(..., alias="graduatedId")
+    annotation: Optional[str] = None
+    technical_score: Optional[Literal["Poor", "Average", "Good", "Excellent"]] = Field(
+        None, alias="technicalScore"
+    )
+    professional_score: Optional[Literal["Poor", "Average", "Good", "Excellent"]] = (
+        Field(None, alias="professionalScore")
+    )
 
 
 class InvitationSchema(BaseModel):
+    """Matches GraduateInvitation from graduateInvitation.ts"""
+
+    model_config = ConfigDict(populate_by_alias=True)
+
     id: str
     full_name: str = Field(..., alias="fullName")
     email: EmailStr
@@ -165,36 +184,28 @@ class InvitationSchema(BaseModel):
     created_at: datetime = Field(..., alias="createdAt")
     expires_at: datetime = Field(..., alias="expiresAt")
 
-    class Config:
-        populate_by_name = True
-        validate_by_name = True
-
 
 class InvitationsSearchPayload(BaseModel):
-    search_term: Optional[str] = Field(None, alias="searchTerm")
+    model_config = ConfigDict(populate_by_alias=True)
 
-    class Config:
-        populate_by_name = True
-        validate_by_name = True
+    search_term: Optional[str] = Field(None, alias="searchTerm")
 
 
 class InvitationsResultResponse(BaseModel):
-    items: list[Optional[InvitationSchema]]
+    """Matches PaginatedInvitationsResponse from graduateInvitation.ts"""
+
+    model_config = ConfigDict(populate_by_alias=True)
+
+    items: list[InvitationSchema]
     pages: int
     page: int
     limit: int
 
-    class Config:
-        populate_by_name = True
-        validate_by_name = True
-
 
 class IncompleteFeedbacks(BaseModel):
+    model_config = ConfigDict(populate_by_alias=True)
+
     id: str
     first_name: str = Field(..., alias="firstName")
     last_name: str = Field(..., alias="lastName")
     cohort: int
-
-    class Config:
-        populate_by_name = True
-        validate_by_name = True
