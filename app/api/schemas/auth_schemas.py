@@ -60,7 +60,7 @@ class UserMeFull(BaseModel):
     email: EmailStr
     avatar_url: str = Field(..., alias="avatarUrl")
     cohort: int
-    github_username: str = Field(..., alias="githubUsername")
+    github_username: Optional[str] = Field(..., alias="githubUsername")
     cv_info: CVInfoModel = Field(..., alias="cvInfo")
     tutors_feedback: list[TutorsFeedbackModel] = Field(..., alias="tutorsFeedback")
     role: str
