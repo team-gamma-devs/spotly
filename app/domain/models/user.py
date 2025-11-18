@@ -17,7 +17,7 @@ class User(BModel):
         avatar_url (str): URL of the user's avatar image.
         avatar_path (str): File path of the user's avatar image.
         cohort (int | None): Cohort number.
-        github (str | None): GitHub username or URL.
+        github_url (str | None): GitHub username or URL.
         cv_info (dict | None): Dictionary containing CV information.
         tutors_feedback (List[dict] | None): List of feedback entries from tutors.
         role (str): Role of the user (default: "graduate").
@@ -34,7 +34,7 @@ class User(BModel):
         avatar_path: str,
         id: Optional[str] = None,
         cohort: Optional[int] = None,
-        github: Optional[str] = None,
+        github_url: Optional[str] = None,
         cv_info: Optional[dict] = None,
         tutors_feedback: Optional[List[Dict[str, Any]]] = None,
         role: str = "graduate",
@@ -52,7 +52,7 @@ class User(BModel):
             avatar_path (str): File path of the user's avatar.
             id (str | None): Optional database ID.
             cohort (int | None): Optional cohort number.
-            github (str | None): Optional GitHub profile.
+            github_url (str | None): Optional GitHub profile.
             cv_info (dict | None): Optional CV info dictionary.
             tutors_feedback (List[str] | None): Optional list of tutor feedback.
             role (str): Role of the user, defaults to "graduate".
@@ -66,7 +66,7 @@ class User(BModel):
         self.cohort = cohort
         self.avatar_url = avatar_url
         self.avatar_path = avatar_path
-        self.github = github
+        self.github_url = github_url
         self.cv_info = cv_info
         self.tutors_feedback = tutors_feedback
         self.__role = role
@@ -104,7 +104,7 @@ class User(BModel):
         return self.__avatar_path
 
     @property
-    def github(self):
+    def github_url(self):
         """Return the user's GitHub profile (URL or username)."""
         return self.__github
 
@@ -148,13 +148,13 @@ class User(BModel):
         else:
             self.__cohort = BModel.validate_number(value, "Cohort")
 
-    @github.setter
-    def github(self, value: Optional[str]):
+    @github_url.setter
+    def github_url(self, value: Optional[str]):
         """Validate and set the user's GitHub profile (optional)."""
         if not value:
             self.__github = None
-            return
-        self.__github = BModel.validate_string(value, "github")
+        else:
+            self.__github = BModel.validate_string(value, "github_url")
 
     @avatar_url.setter
     def avatar_url(self, value: str):
@@ -226,8 +226,8 @@ class User(BModel):
 
         if self.id:
             data["id"] = self.id
-        if self.github:
-            data["github"] = self.github
+        if self.github_url:
+            data["github_url"] = self.github_url
         if self.cv_info:
             data["cv_info"] = self.cv_info
         if self.tutors_feedback:
