@@ -180,7 +180,7 @@ class User(BModel):
     def tutors_feedback(self, value: Optional[list[dict[str, Any]]]):
         """Validate and set the user's tutors feedback list (optional)."""
         if not value:
-            self._tutors_feedback = None
+            self._tutors_feedback = []
             return
         if not isinstance(value, list):
             raise ValueError(f"{value} must be a list of feedbacks")

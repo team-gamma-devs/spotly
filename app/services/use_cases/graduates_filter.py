@@ -156,39 +156,39 @@ class GraduatesFilter:
                 annotations = [
                     feedback
                     for feedback in graduate.tutors_feedback
-                    if feedback.get("annotations")
+                    if feedback.get("annotation")
                 ]
 
                 general_feedback = {
                     feedback["id"]: {
                         "tutor_id": feedback["tutor_id"],
                         "created_at": feedback["created_at"],
-                        "professional_score": feedback["professional_score"],
-                        "technical_score": feedback["technical_score"],
+                        "professional_score": feedback.get("professional_score", ""),
+                        "technical_score": feedback.get("technical_score", ""),
                         "tutor_name": feedback["tutor_name"],
                     }
                     for feedback in graduate.tutors_feedback
-                    if not feedback.get("annotations")
+                    if not feedback.get("annotation")
                 }
 
-            data = {
-                "id": graduate.id,
-                "first_name": graduate.first_name,
-                "last_name": graduate.last_name,
-                "email": graduate.email,
-                "cv_url": graduate.cv_info["personal_cv_url"],
-                "english_level": graduate.cv_info["english_level"],
-                "avatar_url": graduate.avatar_url,
-                "cohort": graduate.cohort,
-                "tech_stack": graduate.cv_info["skills"],
-                "github_url": graduate.github if graduate.github else "",
-                "linkedin_url": graduate.cv_info["linkedin_url"],
-                "created_at": graduate.created_at,
-                "updated_at": graduate.updated_at,
-                "annotations": annotations,
-                "works_in_it": graduate.cv_info["works_in_it"],
-                "tutors_feedback": general_feedback,
-            }
-            response.append(data)
+                data = {
+                    "id": graduate.id,
+                    "first_name": graduate.first_name,
+                    "last_name": graduate.last_name,
+                    "email": graduate.email,
+                    "cv_url": graduate.cv_info["personal_cv_url"],
+                    "english_level": graduate.cv_info["english_level"],
+                    "avatar_url": graduate.avatar_url,
+                    "cohort": graduate.cohort,
+                    "tech_stack": graduate.cv_info["skills"],
+                    "github_url": graduate.github_url if graduate.github_url else "",
+                    "linkedin_url": graduate.cv_info["linkedin_url"],
+                    "created_at": graduate.created_at,
+                    "updated_at": graduate.updated_at,
+                    "annotations": annotations,
+                    "works_in_it": graduate.cv_info["works_in_it"],
+                    "tutors_feedback": general_feedback,
+                }
+                response.append(data)
 
         return response

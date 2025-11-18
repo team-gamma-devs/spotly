@@ -110,4 +110,4 @@ class PostFeedback:
             data (User): User instance with updated tutor feedback.
         """
         new_feedback = {"tutors_feedback": data.tutors_feedback}
-        await self.user_repo.update(data.id, new_feedback)
+        result = await self.user_repo.update(data.id, new_feedback)

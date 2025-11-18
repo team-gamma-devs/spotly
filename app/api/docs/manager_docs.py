@@ -161,7 +161,8 @@ CREATE_FEEDBACK_DOCS = {
     "summary": "Create tutor feedback for a graduate",
     "description": """
     Submit feedback for a specific graduate. Feedback can include professional scores,
-    technical scores, and written annotations.
+    technical scores, and written annotations, if only **graduatedId** and **annotation** are provided, the feedback is
+    assumed to be a manager annotation.
     
     **Required Fields:**
     - **graduatedId**: The ID of the graduate receiving feedback

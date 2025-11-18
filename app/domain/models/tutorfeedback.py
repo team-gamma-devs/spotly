@@ -18,7 +18,7 @@ class TutorFeedback:
         annotation: Optional[str] = None,
         created_at: Optional[datetime] = None,
     ):
-        self.__id = id or uuid.uuid4()
+        self.__id = id or str(uuid.uuid4())
         self.__tutor_id = BModel.validate_id(tutor_id, "tutor_id")
         self.__tutor_name = BModel.validate_string(tutor_name, "tutor_name")
         self.professional_score = professional_score
@@ -104,7 +104,7 @@ class TutorFeedback:
 
     def to_dict(self):
         data = {
-            "id": self.id,
+            "id": str(self.id),
             "tutor_id": self.tutor_id,
             "tutor_name": self.tutor_name,
             "created_at": self.created_at,
