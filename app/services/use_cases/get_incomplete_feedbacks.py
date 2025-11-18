@@ -13,9 +13,7 @@ class GetIncompleteFeedbacks:
         tutor_id = await self._get_tutor_id(user.email)
         return await self._get_graduates_no_feedback(tutor_id)
 
-    async def _get_graduates_no_feedback(
-        self, tutor_id: str
-    ) -> list[dict[str, Any]]:
+    async def _get_graduates_no_feedback(self, tutor_id: str) -> list[dict[str, Any]]:
         users_without_feedback = await self.user_repo.find_all(
             {
                 "$or": [

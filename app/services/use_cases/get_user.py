@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from app.logger import get_logger
 from app.settings import settings
@@ -19,7 +19,7 @@ class GetUser:
         user_repo (UserRepository): Repository to access user data.
     """
 
-    def __init__(self, user_repo: UserRepository = None):
+    def __init__(self, user_repo: Optional[UserRepository] = None):
         """
         Initialize the GetUser use case.
 
@@ -42,9 +42,7 @@ class GetUser:
         """
         user_metadata = self._extract_metadata(user)
         user_data = await self._get_user_by_email(user["email"])
-        return (
-            user_metadata | user_data.to_dict() if user_data else user_metadata
-        )
+        return user_metadata | user_data.to_dict() if user_data else user_metadata
 
     def _extract_metadata(self, user: dict[str, Any]) -> dict[str, Any]:
         """
