@@ -36,7 +36,7 @@ class User(BModel):
         cohort: Optional[int] = None,
         github: Optional[str] = None,
         cv_info: Optional[dict] = None,
-        tutors_feedback: Optional[List[str]] = None,
+        tutors_feedback: Optional[List[Dict[str, Any]]] = None,
         role: str = "graduate",
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
