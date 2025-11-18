@@ -30,19 +30,28 @@ class PostFeedback:
         """
         self.user_repo = user_repo or UserRepository()
 
-    async def save_feedback(self, data: dict[str, Any], user: dict[str, Any]):
+    async def save_feedback(self, data, user: dict[str, Any]):
         """
         Save a tutor feedback entry for a specific graduate.
 
         Args:
-            data (dict[str, Any]): Dictionary containing feedback data. Must include 'graduated_id'.
+            data: FeedbackSchema object containing feedback data.
+            user: Dictionary containing user information from JWT.
 
         Raises:
             InvalidFeedback: If the feedback is invalid or the graduated_id does not exist.
         """
-        graduated_id = data.pop("graduated_id")
+        graduated_id = data.graduated_id
+
         tutor = await self._get_tutor(user["email"])
-        feedback = self._generate_feedback(data, tutor)
+
+        feedback_dict = {
+            "annotation": data.annotation,
+            "technical_score": data.technical_score,
+            "professional_score": data.professional_score,
+        }
+
+        feedback = self._generate_feedback(feedback_dict, tutor)
         graduated = await self._get_user(graduated_id)
         graduated.tutors_feedback_add(feedback.to_dict())
         await self._update_data(graduated)
@@ -61,7 +70,7 @@ class PostFeedback:
             InvalidFeedback: If the feedback data cannot be used to instantiate a TutorFeedback.
         """
         data["tutor_id"] = tutor.id
-        data["tutor_name"] = tutor.first_name + tutor.last_name
+        data["tutor_name"] = tutor.first_name + " " + tutor.last_name
         try:
             feedback = TutorFeedback(**data)
         except (TypeError, ValueError) as e:

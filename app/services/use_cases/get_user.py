@@ -75,4 +75,24 @@ class GetUser:
         user = await self.user_repo.find_by_email(email)
         if not user:
             return None
-        return User(**user)
+
+        if "_id" in user:
+            user["id"] = str(user.pop("_id"))
+
+        user_fields = {
+            "id": user.get("id"),
+            "first_name": user.get("first_name"),
+            "last_name": user.get("last_name"),
+            "email": user.get("email"),
+            "avatar_url": user.get("avatar_url"),
+            "avatar_path": user.get("avatar_path"),
+            "cohort": user.get("cohort"),
+            "github_url": user.get("github_url"),
+            "cv_info": user.get("cv_info"),
+            "tutors_feedback": user.get("tutors_feedback"),
+            "role": user.get("role", "graduate"),
+            "created_at": user.get("created_at"),
+            "updated_at": user.get("updated_at"),
+        }
+
+        return User(**user_fields)

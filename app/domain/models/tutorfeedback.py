@@ -58,6 +58,7 @@ class TutorFeedback:
     def professional_score(self, value: Optional[str]):
         if not value:
             self.__professional_score = None
+            return
 
         if isinstance(value, str):
             value = value.lower().strip()
@@ -73,6 +74,7 @@ class TutorFeedback:
     def technical_score(self, value: Optional[str]):
         if not value:
             self.__technical_score = None
+            return
 
         if isinstance(value, str):
             value = value.lower().strip()
@@ -88,6 +90,7 @@ class TutorFeedback:
     def annotation(self, value: Optional[str]):
         if not value:
             self.__annotation = None
+            return
 
         self.__annotation = BModel.validate_string(value, "annotation")
 
@@ -95,6 +98,7 @@ class TutorFeedback:
     def created_at(self, value: Optional[datetime]):
         if not value:
             self.__created_at = datetime.now()
+            return
 
         self.__created_at = BModel.validate_datetime(value, "created_at")
 

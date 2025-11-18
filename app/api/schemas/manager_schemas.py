@@ -162,12 +162,12 @@ class FeedbackSchema(BaseModel):
     model_config = ConfigDict(validate_by_name=True)
 
     graduated_id: str = Field(..., alias="graduatedId")
-    annotation: Optional[str] = None
+    annotation: Optional[str] = Field(default=None)
     technical_score: Optional[Literal["Poor", "Average", "Good", "Excellent"]] = Field(
-        None, alias="technicalScore"
+        default=None, alias="technicalScore"
     )
     professional_score: Optional[Literal["Poor", "Average", "Good", "Excellent"]] = (
-        Field(None, alias="professionalScore")
+        Field(default=None, alias="professionalScore")
     )
 
 
