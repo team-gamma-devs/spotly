@@ -45,7 +45,7 @@ class PostFeedback:
         feedback = self._generate_feedback(data, tutor)
         graduated = await self._get_user(graduated_id)
         graduated.tutors_feedback_add(feedback.to_dict())
-        await self._update_data(user)
+        await self._update_data(graduated)
 
     def _generate_feedback(self, data: dict[str, Any], tutor: User) -> TutorFeedback:
         """
@@ -100,5 +100,5 @@ class PostFeedback:
         Args:
             data (User): User instance with updated tutor feedback.
         """
-        new_feedbacks = {"tutors_feedback": data.tutors_feedback}
-        await self.user_repo.update(data.id, new_feedbacks)
+        new_feedback = {"tutors_feedback": data.tutors_feedback}
+        await self.user_repo.update(data.id, new_feedback)
