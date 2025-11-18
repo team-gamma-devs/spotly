@@ -11,7 +11,7 @@ class FiltersListResponse(BaseModel):
 
 
 class FiltersPayload(BaseModel):
-    model_config = ConfigDict(populate_by_alias=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     technologies: Optional[list[str]] = Field(
         None, description="List of technologies that graduates must have"
@@ -31,7 +31,7 @@ class FiltersPayload(BaseModel):
 
 
 class Annotations(BaseModel):
-    model_config = ConfigDict(populate_by_alias=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     id: str = Field(
         ...,
@@ -49,7 +49,7 @@ class Annotations(BaseModel):
 class TutorFeedbackItem(BaseModel):
     """Individual tutor feedback item for the dictionary values"""
 
-    model_config = ConfigDict(populate_by_alias=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     created_at: datetime = Field(..., alias="createdAt")
     professional_score: Literal["Poor", "Average", "Good", "Excellent"] = Field(
@@ -63,7 +63,7 @@ class TutorFeedbackItem(BaseModel):
 
 
 class FilteredUsers(BaseModel):
-    model_config = ConfigDict(populate_by_alias=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     id: str = Field(
         ...,
@@ -159,7 +159,7 @@ class FilteredUsersResponse(BaseModel):
 
 
 class FeedbackSchema(BaseModel):
-    model_config = ConfigDict(populate_by_alias=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     graduated_id: str = Field(..., alias="graduatedId")
     annotation: Optional[str] = None
@@ -174,7 +174,7 @@ class FeedbackSchema(BaseModel):
 class InvitationSchema(BaseModel):
     """Matches GraduateInvitation from graduateInvitation.ts"""
 
-    model_config = ConfigDict(populate_by_alias=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     id: str
     full_name: str = Field(..., alias="fullName")
@@ -186,7 +186,7 @@ class InvitationSchema(BaseModel):
 
 
 class InvitationsSearchPayload(BaseModel):
-    model_config = ConfigDict(populate_by_alias=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     search_term: Optional[str] = Field(None, alias="searchTerm")
 
@@ -194,7 +194,7 @@ class InvitationsSearchPayload(BaseModel):
 class InvitationsResultResponse(BaseModel):
     """Matches PaginatedInvitationsResponse from graduateInvitation.ts"""
 
-    model_config = ConfigDict(populate_by_alias=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     items: list[InvitationSchema]
     pages: int
@@ -203,7 +203,7 @@ class InvitationsResultResponse(BaseModel):
 
 
 class IncompleteFeedbacks(BaseModel):
-    model_config = ConfigDict(populate_by_alias=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     id: str
     first_name: str = Field(..., alias="firstName")

@@ -10,7 +10,7 @@ class LoginRequest(BaseModel):
 class UserMe(BaseModel):
     """Matches frontend UserMe type from userMe.ts"""
 
-    model_config = ConfigDict(populate_by_alias=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     id: str
     first_name: str = Field(..., alias="firstName")
@@ -23,7 +23,7 @@ class UserMe(BaseModel):
 class CVInfoModel(BaseModel):
     """Matches frontend CvInfo interface from userFull.ts"""
 
-    model_config = ConfigDict(populate_by_alias=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     personal_cv_url: str = Field(..., alias="personalCvUrl")
     linkedin_url: str = Field(..., alias="linkedinUrl")
@@ -38,7 +38,7 @@ class CVInfoModel(BaseModel):
 class TutorsFeedbackModel(BaseModel):
     """Matches frontend TutorFeedback interface from userFull.ts"""
 
-    model_config = ConfigDict(populate_by_alias=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     id: str
     tutor_id: str = Field(..., alias="tutorId")
@@ -52,7 +52,7 @@ class TutorsFeedbackModel(BaseModel):
 class UserMeFull(BaseModel):
     """Matches frontend UserState interface from userFull.ts"""
 
-    model_config = ConfigDict(populate_by_alias=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     id: str
     first_name: str = Field(..., alias="firstName")
