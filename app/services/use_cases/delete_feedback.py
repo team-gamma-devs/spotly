@@ -19,7 +19,7 @@ class DeleteFeedback:
         """
         self.user_repo = user_repo or UserRepository()
 
-    async def delete(self, payload: dict[str]) -> None:
+    async def delete(self, payload: dict[str, str]) -> None:
         """
         Delete an invitation by its ID.
 
@@ -29,6 +29,7 @@ class DeleteFeedback:
         Raises:
             DeleteError: If the deletion process fails.
         """
+        id = payload["id"]
         success = await self.user_repo.delete(id)
         if not success:
             raise DeleteError("Invitation delete failed")
